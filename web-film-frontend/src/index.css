@@ -1,0 +1,115 @@
+@import "tailwindcss";
+
+@theme {
+  --color-obsidian: #050505;
+  --color-midnight: #0b1120;
+  --color-surface: #121826;
+  --color-neon: #00f3ff;
+  --color-neon-dim: rgba(0, 243, 255, 0.1);
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #94a3b8;
+
+  --font-serif: "Playfair Display", serif;
+  --font-sans: "Be Vietnam Pro", sans-serif;
+  
+  --shadow-neon: 0 0 15px rgba(0, 243, 255, 0.4);
+  --shadow-neon-sm: 0 0 8px rgba(0, 243, 255, 0.3);
+  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-fadeIn: fadeIn 1s ease-out forwards;
+  --animate-fadeInUp: fadeInUp 1s ease-out forwards;
+
+  @keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-5px); }
+    100% { transform: translateY(0px); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+@layer utilities {
+  .glass-nav {
+    background: rgba(5, 5, 5, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  .glass-card {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  .glass-card:hover {
+    border-color: rgba(0, 243, 255, 0.4);
+    box-shadow: 0 0 20px rgba(0, 243, 255, 0.15);
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .interactive-card {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: center center;
+    z-index: 10;
+  }
+  .interactive-card:hover {
+    transform: scale(1.15);
+    z-index: 50;
+    box-shadow: 0 0 30px rgba(0, 243, 255, 0.2);
+    background: rgba(5, 20, 25, 0.95);
+  }
+  .interactive-card:hover .poster-image {
+    height: 140px; 
+    opacity: 0; 
+  }
+  .video-preview {
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+  .interactive-card:hover .video-preview {
+    opacity: 1;
+  }
+  .interactive-card .card-content {
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    transform: translateY(10px);
+  }
+  .interactive-card:hover .card-content {
+    opacity: 1;
+    max-height: 200px;
+    transform: translateY(0);
+    padding-top: 1rem;
+  }
+  .interactive-card:hover .card-info-base {
+    display: none;
+  }
+  .interactive-card:hover::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    background: linear-gradient(45deg, #00f3ff, transparent, #00f3ff);
+    z-index: -1;
+    border-radius: 1rem;
+    opacity: 0.5;
+    filter: blur(10px);
+  }
+}
+
+/* Base styles */
+body {
+  @apply bg-obsidian text-text-primary font-sans overflow-x-hidden antialiased selection:bg-neon selection:text-obsidian;
+}

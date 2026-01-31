@@ -1,0 +1,1 @@
+{"success":false,"message":"Debug Error: org.springframework.web.servlet.resource.NoResourceFoundException - No static resource v1/movies for request '/api/v1/movies'.","timestamp":"2026-01-31T16:50:11.0513975"}
