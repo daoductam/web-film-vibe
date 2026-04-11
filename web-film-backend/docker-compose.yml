@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: cinestream-db
+    restart: always
+    environment:
+      MYSQL_DATABASE: webfilmanime
+      MYSQL_ROOT_PASSWORD: ${DATABASE_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - cinestream-network
+
+  redis:
+    image: redis:alpine
+    container_name: cinestream-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - cinestream-network
+
+  app:
+    image: ${DOCKER_IMAGE}
+    container_name: cinestream-app
+    restart: always
+    depends_on:
+      - db
+      - redis
+    environment:
+      - DATABASE_URL=jdbc:mysql://db:3306/webfilmanime?createDatabaseIfNotExist=true&useSSL=false
+      - DATABASE_USERNAME=root
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=${JWT_SECRET}
+      - SERVER_PORT=8081
+    ports:
+      - "8081:8081"
+    networks:
+      - cinestream-network
+
+networks:
+  cinestream-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
