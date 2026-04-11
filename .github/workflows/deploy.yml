@@ -76,9 +76,9 @@ jobs:
             
             # Create .env file for secrets
             cat > .env << EOF
-            DOCKER_IMAGE=${{ env.REGISTRY }}/${{ github.repository_owner }}/cinestream-backend:latest
-            DATABASE_PASSWORD=${{ secrets.DB_PASSWORD }}
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            DOCKER_IMAGE="${{ env.REGISTRY }}/${{ github.repository_owner }}/cinestream-backend:latest"
+            DATABASE_PASSWORD="${{ secrets.DB_PASSWORD }}"
+            JWT_SECRET="${{ secrets.JWT_SECRET }}"
             EOF
             
             # Pull and Restart
