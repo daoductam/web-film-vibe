@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base application theme. -->
+    <style name="Theme.CineStream" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!-- Splash Screen theme. -->
+    <style name="Theme.App.Starting" parent="Theme.SplashScreen">
+        <!-- Nền là màu Obsidian (Đen huyền bí) -->
+        <item name="windowSplashScreenBackground">#0B0B0D</item>
+        <!-- Icon thương hiệu CineStream -->
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_cinestream_logo</item>
+        <item name="postSplashScreenTheme">@style/Theme.CineStream</item>
+    </style>
+</resources>

@@ -64,14 +64,14 @@ export const MovieDetailPage = () => {
                     <div className="absolute inset-0 bg-obsidian/40 backdrop-blur-[4px] z-10" />
                 </div>
 
-                <div className="relative z-20 pt-28 max-w-[1600px] mx-auto px-6">
+                <div className="relative z-20 pt-24 md:pt-28 max-w-[1600px] mx-auto px-4 md:px-6">
                     {/* Breadcrumbs */}
-                    <div className="flex items-center gap-2 text-sm text-text-secondary mb-6 font-medium">
+                    <div className="flex items-center gap-2 text-[10px] md:text-sm text-text-secondary mb-4 md:mb-6 font-medium overflow-x-auto hide-scrollbar whitespace-nowrap">
                         <a href="/" className="hover:text-neon">Trang chủ</a>
-                        <span className="text-xs">{'>'}</span>
+                        <span className="text-[10px]">{'>'}</span>
                         <a href="/movies" className="hover:text-neon">Phim lẻ</a>
-                        <span className="text-xs">{'>'}</span>
-                        <span className="text-white">{movie.title}</span>
+                        <span className="text-[10px]">{'>'}</span>
+                        <span className="text-white truncate">{movie.title}</span>
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
@@ -129,9 +129,9 @@ export const MovieDetailPage = () => {
                             {/* Server/Episode Selection */}
                             <div className="flex flex-col gap-4 bg-white/5 border border-white/5 rounded-xl p-4 backdrop-blur-md">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-sm font-bold text-gray-400">Chọn Server & Tập Phim:</span>
-                                    <button className="text-sm text-red-400 hover:text-red-300 flex items-center gap-1 font-medium">
-                                        <span className="material-symbols-outlined text-base">report</span> Báo lỗi
+                                    <span className="text-xs md:text-sm font-bold text-gray-400">Chọn Server & Tập:</span>
+                                    <button className="text-[10px] md:text-sm text-red-400 hover:text-red-300 flex items-center gap-1 font-medium">
+                                        <span className="material-symbols-outlined text-xs md:text-base">report</span> Báo lỗi
                                     </button>
                                 </div>
                                 
@@ -139,13 +139,13 @@ export const MovieDetailPage = () => {
                                 {movie.servers && movie.servers.length > 0 ? (
                                     movie.servers.map((server: any) => (
                                         <div key={server.serverName} className="space-y-2">
-                                            <h4 className="text-neon text-xs font-bold uppercase tracking-wider">{server.serverName}</h4>
+                                            <h4 className="text-neon text-[10px] md:text-xs font-bold uppercase tracking-wider">{server.serverName}</h4>
                                             <div className="flex flex-wrap gap-2">
                                                 {server.episodes.map((ep: any) => (
                                                     <button 
                                                         key={ep.id}
                                                         onClick={() => { setSelectedEpisode(ep); setIsPlaying(true); }}
-                                                        className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${selectedEpisode?.id === ep.id ? 'bg-neon text-obsidian shadow-neon-sm' : 'bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white'}`}
+                                                        className={`px-3 py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all ${selectedEpisode?.id === ep.id ? 'bg-neon text-obsidian shadow-neon-sm' : 'bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white'}`}
                                                     >
                                                         {ep.name}
                                                     </button>
@@ -154,7 +154,7 @@ export const MovieDetailPage = () => {
                                         </div>
                                     ))
                                 ) : (
-                                    <span className="text-gray-500 text-sm">Chưa có tập phim nào.</span>
+                                    <span className="text-gray-500 text-xs md:text-sm">Chưa có tập phim nào.</span>
                                 )}
                                 </div>
                             </div>

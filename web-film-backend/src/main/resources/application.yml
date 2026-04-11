@@ -5,7 +5,7 @@ spring:
 
   # Database Configuration
   datasource:
-    url: ${DATABASE_URL:jdbc:mysql://localhost:3306/webfilm?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true}
+    url: ${DATABASE_URL:jdbc:mysql://localhost:3306/webfilmanime?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true}
     username: ${DATABASE_USERNAME:root}
     password: ${DATABASE_PASSWORD:TaM123456789@}
     driver-class-name: com.mysql.cj.jdbc.Driver

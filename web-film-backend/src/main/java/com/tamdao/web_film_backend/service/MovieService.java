@@ -3,6 +3,7 @@ package com.tamdao.web_film_backend.service;
 import com.tamdao.web_film_backend.dto.response.*;
 import com.tamdao.web_film_backend.entity.Episode;
 import com.tamdao.web_film_backend.entity.Movie;
+import com.tamdao.web_film_backend.entity.MovieType;
 import com.tamdao.web_film_backend.exception.ResourceNotFoundException;
 import com.tamdao.web_film_backend.mapper.CategoryMapper;
 import com.tamdao.web_film_backend.mapper.CountryMapper;
@@ -158,6 +159,48 @@ public class MovieService {
     /**
      * Increment view count for a movie.
      */
+    /**
+     * Fix mislabeled movies in database.
+     * Any movie with more than 1 total episode or current episode clearly being a series
+     * should be marked as SERIES if it's currently marked as SINGLE.
+     */
+    @Transactional
+    public int cleanupMovieTypes() {
+        log.info("Starting movie type cleanup...");
+        List<Movie> allMovies = movieRepository.findAll();
+        int fixedCount = 0;
+        
+        for (Movie movie : allMovies) {
+            MovieType currentType = movie.getType();
+            MovieType targetType = currentType;
+            
+            // Rule 1: More than 1 episode is always a SERIES
+            if (movie.getTotalEpisodes() != null && movie.getTotalEpisodes() > 1) {
+                targetType = MovieType.SERIES;
+            } 
+            // Rule 2: 1 or 0 episode should be SINGLE for navigation (Movies page), 
+            // even if it was HOAT_HINH or TV_SHOW
+            else if (movie.getTotalEpisodes() != null && movie.getTotalEpisodes() <= 1) {
+                targetType = MovieType.SINGLE;
+            }
+            
+            // Rule 3: Check by current episode name for fuzzy detection of series
+            String currentEp = movie.getCurrentEpisode();
+            if (currentEp != null && (currentEp.toLowerCase().contains("tập") || currentEp.contains("/"))) {
+                targetType = MovieType.SERIES;
+            }
+
+            if (targetType != currentType) {
+                movie.setType(targetType);
+                movieRepository.save(movie);
+                fixedCount++;
+            }
+        }
+        
+        log.info("Movie type cleanup completed. Fixed {} movies.", fixedCount);
+        return fixedCount;
+    }
+
     @Transactional
     public void incrementViewCount(String slug) {
         movieRepository.findBySlug(slug).ifPresent(movie -> {

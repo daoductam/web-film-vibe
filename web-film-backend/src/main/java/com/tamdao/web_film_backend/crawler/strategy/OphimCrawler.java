@@ -69,6 +69,35 @@ public class OphimCrawler implements CrawlerStrategy {
     }
 
     @Override
+    public List<CrawledMovie> fetchByCategory(String categorySlug, int page) {
+        try {
+            String url = properties.getOphimBaseUrl() + "/danh-sach/" + categorySlug + "?page=" + page;
+            log.info("Fetching movies by category {} from Ophim: {}", categorySlug, url);
+
+            JsonNode response = webClient.get()
+                    .uri(URI.create(url))
+                    .retrieve()
+                    .bodyToMono(JsonNode.class)
+                    .block();
+
+            if (response == null || !response.has("items")) {
+                log.warn("No items found in Ophim category response");
+                return Collections.emptyList();
+            }
+
+            List<CrawledMovie> movies = new ArrayList<>();
+            for (JsonNode item : response.get("items")) {
+                movies.add(mapToCrawledMovie(item, response.path("pathImage").asText("")));
+            }
+
+            return movies;
+        } catch (Exception e) {
+            log.error("Error fetching category from Ophim: {}", e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+    @Override
     public CrawledMovie fetchMovieDetail(String slug) {
         try {
             String url = properties.getOphimBaseUrl() + "/phim/" + slug;
@@ -147,6 +176,8 @@ public class OphimCrawler implements CrawlerStrategy {
                 .tmdbId(item.path("tmdb").path("id").asText(null))
                 .imdbId(item.path("imdb").path("id").asText(null))
                 .type(item.path("tmdb").path("type").asText("movie"))
+                .totalEpisodes(item.path("episode_total").asInt(0)) // Add this if available in list
+                .currentEpisode(item.path("episode_current").asText(""))
                 .build();
     }
 

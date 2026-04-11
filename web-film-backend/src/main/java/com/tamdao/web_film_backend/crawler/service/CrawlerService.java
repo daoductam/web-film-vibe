@@ -129,6 +129,57 @@ public class CrawlerService {
         return CompletableFuture.completedFuture(totalMerged);
     }
 
+    @Async
+    public CompletableFuture<Integer> crawlByCategory(String categorySlug, int pages) {
+        if (isCrawling()) {
+            log.warn("Crawl already in progress, ignoring request");
+            return CompletableFuture.completedFuture(-1);
+        }
+
+        currentProgress = new CrawlProgress();
+        int totalPagesToProcess = pages * (int) crawlers.stream().filter(CrawlerStrategy::isEnabled).count();
+        currentProgress.start(totalPagesToProcess);
+        
+        log.info("Starting crawl for category '{}' | {} pages from {} sources", 
+                categorySlug, pages, crawlers.size());
+
+        for (CrawlerStrategy crawler : crawlers) {
+            if (!crawler.isEnabled()) continue;
+
+            String sourceName = crawler.getSourceProvider().name();
+            currentProgress.setCurrentSource(sourceName);
+
+            for (int page = 1; page <= pages; page++) {
+                try {
+                    List<CrawledMovie> movies = crawler.fetchByCategory(categorySlug, page);
+                    currentProgress.incrementMoviesFound(movies.size());
+                    
+                    for (CrawledMovie crawledMovie : movies) {
+                        try {
+                            currentProgress.setCurrentMovie(crawledMovie.getTitle());
+                            CrawledMovie detail = crawler.fetchMovieDetail(crawledMovie.getSlug());
+                            if (detail != null) {
+                                // Force type for hoat-hinh/anime if needed, but merger should handle it
+                                dataMergerService.mergeMovie(detail, crawler.getSourceProvider());
+                                currentProgress.incrementMerged();
+                            }
+                        } catch (Exception e) {
+                            currentProgress.incrementFailed();
+                            log.error("Error processing category movie {}: {}", crawledMovie.getSlug(), e.getMessage());
+                        }
+                    }
+                    currentProgress.incrementCompletedPages();
+                } catch (Exception e) {
+                    currentProgress.incrementCompletedPages();
+                    log.error("Error crawling category page {} from {}: {}", page, sourceName, e.getMessage());
+                }
+            }
+        }
+
+        currentProgress.complete();
+        return CompletableFuture.completedFuture(currentProgress.getSuccessfullyMerged().get());
+    }
+
     /**
      * Stop the current crawl job.
      */

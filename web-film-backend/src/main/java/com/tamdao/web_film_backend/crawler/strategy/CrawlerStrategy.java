@@ -35,6 +35,14 @@ public interface CrawlerStrategy {
     CrawledMovie fetchMovieDetail(String slug);
 
     /**
+     * Fetch movies by category slug.
+     * @param categorySlug The slug of the category (e.g., 'hoat-hinh')
+     * @param page Page number
+     * @return List of movies in that category
+     */
+    List<CrawledMovie> fetchByCategory(String categorySlug, int page);
+
+    /**
      * Check if this crawler is enabled.
      */
     boolean isEnabled();

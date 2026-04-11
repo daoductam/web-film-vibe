@@ -112,6 +112,18 @@ public class DataMergerService {
     }
 
     private Movie createNewMovie(CrawledMovie crawled) {
+        MovieType movieType = parseType(crawled.getType());
+        
+        // Refined logic: Prioritize SINGLE/SERIES based on episode count
+        if (crawled.getTotalEpisodes() != null) {
+            if (crawled.getTotalEpisodes() > 1) {
+                movieType = MovieType.SERIES;
+            } else if (crawled.getTotalEpisodes() <= 1 && (movieType == MovieType.HOAT_HINH || movieType == MovieType.TV_SHOW)) {
+                // If it's animation or TV show but 0 or 1 episode, it's a "single movie" format
+                movieType = MovieType.SINGLE;
+            }
+        }
+
         return Movie.builder()
                 .title(crawled.getTitle())
                 .originTitle(crawled.getOriginTitle())
@@ -123,7 +135,7 @@ public class DataMergerService {
                 .imdbId(crawled.getImdbId())
                 .description(crawled.getDescription())
                 .status(parseStatus(crawled.getStatus()))
-                .type(parseType(crawled.getType()))
+                .type(movieType)
                 .totalEpisodes(crawled.getTotalEpisodes())
                 .currentEpisode(crawled.getCurrentEpisode())
                 .quality(crawled.getQuality())
@@ -160,6 +172,22 @@ public class DataMergerService {
         }
         if (crawled.getStatus() != null) {
             movie.setStatus(parseStatus(crawled.getStatus()));
+        }
+        
+        // Sync movie type (Fix: updating type was missing)
+        if (crawled.getType() != null) {
+            MovieType newType = parseType(crawled.getType());
+            
+            // Refined logic: Prioritize SINGLE/SERIES based on episode count
+            if (movie.getTotalEpisodes() != null) {
+                if (movie.getTotalEpisodes() > 1) {
+                    newType = MovieType.SERIES;
+                } else if (movie.getTotalEpisodes() <= 1 && (newType == MovieType.HOAT_HINH || newType == MovieType.TV_SHOW)) {
+                    // Treat single-episode animations/shows as SINGLE for better navigation
+                    newType = MovieType.SINGLE;
+                }
+            }
+            movie.setType(newType);
         }
     }
 
@@ -238,11 +266,14 @@ public class DataMergerService {
     }
 
     private MovieType parseType(String type) {
-        if (type == null) return MovieType.SINGLE;
-        return switch (type.toLowerCase()) {
-            case "series", "tv", "phim bộ" -> MovieType.SERIES;
-            case "hoathinh", "hoạt hình" -> MovieType.HOAT_HINH;
-            case "tvshow", "tv_show" -> MovieType.TV_SHOW;
+        if (type == null || type.isEmpty()) return MovieType.SINGLE;
+        
+        String typeLower = type.toLowerCase().trim();
+        return switch (typeLower) {
+            case "series", "tv", "phim bộ", "tvshows", "tvshow", "television" -> MovieType.SERIES;
+            case "hoathinh", "hoạt hình", "animation", "anime" -> MovieType.HOAT_HINH;
+            case "tv_show", "show", "variety" -> MovieType.TV_SHOW;
+            case "single", "movie", "phim lẻ" -> MovieType.SINGLE;
             default -> MovieType.SINGLE;
         };
     }

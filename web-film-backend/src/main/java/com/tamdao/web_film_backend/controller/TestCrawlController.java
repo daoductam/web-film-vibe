@@ -26,6 +26,24 @@ public class TestCrawlController {
 
     private final CrawlerService crawlerService;
 
+    @PostMapping("/category/{categorySlug}")
+    @Operation(summary = "Trigger category test crawl", description = "Test crawl by category without authentication")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> crawlByCategory(
+            @PathVariable String categorySlug,
+            @RequestParam(defaultValue = "1") int pages) {
+        
+        if (crawlerService.isCrawling()) {
+            return ResponseEntity.ok(ApiResponse.error("Crawl already in progress. Use /progress to check status."));
+        }
+        
+        log.info("Test triggered category crawl for {} ({} pages)", categorySlug, pages);
+        crawlerService.crawlByCategory(categorySlug, pages);
+        return ResponseEntity.ok(ApiResponse.success(
+                Map.of("category", categorySlug, "status", "Crawl started", "pages", pages),
+                "Category crawl job started in background. Use /progress to monitor."
+        ));
+    }
+
     @PostMapping
     @Operation(summary = "Trigger test crawl", description = "Test crawl without authentication")
     public ResponseEntity<ApiResponse<Map<String, Object>>> triggerCrawl(

@@ -1,0 +1,15 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Play-button triangle shape with a modern twist -->
+    <path
+        android:fillColor="#00FFFF"
+        android:pathData="M8,5.14V19.14L19,12.14L8,5.14Z M10,8.14L16.27,12.14L10,16.14V8.14Z" />
+    <!-- Gradient outer ring or glow hint (simulated with paths) -->
+    <path
+        android:fillColor="#00FFFF"
+        android:fillAlpha="0.3"
+        android:pathData="M12,2C6.48,2 2,6.48 2,12s4.48,10 10,10 10,-4.48 10,-10S17.52,2 12,2zM12,20c-4.41,0 -8,-3.59 -8,-8s3.59,-8 8,-8 8,3.59 8,8 -3.59,8 -8,8z" />
+</vector>

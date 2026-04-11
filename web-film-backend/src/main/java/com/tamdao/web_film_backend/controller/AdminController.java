@@ -23,6 +23,30 @@ import java.util.Map;
 public class AdminController {
 
     private final CrawlerService crawlerService;
+    private final com.tamdao.web_film_backend.service.MovieService movieService;
+
+    @PostMapping("/maintenance/fix-types")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Fix movie types", description = "Automatically re-classify mislabeled movies as SERIES based on episode count")
+    public ResponseEntity<ApiResponse<Integer>> fixMovieTypes() {
+        log.info("Admin triggered movie type maintenance");
+        int count = movieService.cleanupMovieTypes();
+        return ResponseEntity.ok(ApiResponse.success(count, "Maintenance completed. Total movies fixed: " + count));
+    }
+
+    @PostMapping("/crawl/category/{categorySlug}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Crawl by category", description = "Trigger crawl for a specific category (e.g., 'hoat-hinh' for anime)")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> crawlByCategory(
+            @PathVariable String categorySlug,
+            @RequestParam(defaultValue = "1") int pages) {
+        log.info("Admin triggered crawl for category: {} ({} pages)", categorySlug, pages);
+        crawlerService.crawlByCategory(categorySlug, pages);
+        return ResponseEntity.ok(ApiResponse.success(
+                Map.of("category", categorySlug, "status", "Crawl started", "pages", pages),
+                "Category crawl job started in background"
+        ));
+    }
 
     @PostMapping("/crawl")
     @PreAuthorize("hasRole('ADMIN')")

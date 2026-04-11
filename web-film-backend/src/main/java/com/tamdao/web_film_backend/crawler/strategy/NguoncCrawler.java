@@ -68,6 +68,36 @@ public class NguoncCrawler implements CrawlerStrategy {
     }
 
     @Override
+    public List<CrawledMovie> fetchByCategory(String categorySlug, int page) {
+        try {
+            // Nguonc category URL structure: /films/danh-sach/{category}?page={page}
+            String url = properties.getNguoncBaseUrl() + "/films/danh-sach/" + categorySlug + "?page=" + page;
+            log.info("Fetching movies by category {} from Nguonc: {}", categorySlug, url);
+
+            JsonNode response = webClient.get()
+                    .uri(URI.create(url))
+                    .retrieve()
+                    .bodyToMono(JsonNode.class)
+                    .block();
+
+            if (response == null || !response.has("items")) {
+                log.warn("No items found in Nguonc category response");
+                return Collections.emptyList();
+            }
+
+            List<CrawledMovie> movies = new ArrayList<>();
+            for (JsonNode item : response.get("items")) {
+                movies.add(mapToCrawledMovie(item));
+            }
+
+            return movies;
+        } catch (Exception e) {
+            log.error("Error fetching category from Nguonc: {}", e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+    @Override
     public CrawledMovie fetchMovieDetail(String slug) {
         try {
             String url = properties.getNguoncBaseUrl() + "/film/" + slug;
@@ -135,6 +165,7 @@ public class NguoncCrawler implements CrawlerStrategy {
                 .currentEpisode(item.path("current_episode").asText())
                 .quality(item.path("quality").asText())
                 .language(item.path("language").asText())
+                .type(item.path("type").asText("series")) // Nguonc list items usually series if in latest, but let's take whatever it says
                 .build();
     }
 

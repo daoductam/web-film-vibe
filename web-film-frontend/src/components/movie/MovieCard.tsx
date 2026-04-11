@@ -8,7 +8,7 @@ interface MovieCardProps {
 
 export const MovieCard = ({ movie }: MovieCardProps) => {
     return (
-        <Link to={`/movie/${movie.slug}`} className="block snap-start shrink-0 w-[240px] group relative cursor-pointer interactive-card rounded-2xl glass-card border border-white/5 bg-surface overflow-hidden">
+        <Link to={`/movie/${movie.slug}`} className="block snap-start shrink-0 w-[160px] xs:w-[180px] sm:w-[200px] md:w-[240px] group relative cursor-pointer interactive-card rounded-2xl glass-card border border-white/5 bg-surface overflow-hidden">
 
             <div className="aspect-[2/3] w-full relative">
                 <img 
