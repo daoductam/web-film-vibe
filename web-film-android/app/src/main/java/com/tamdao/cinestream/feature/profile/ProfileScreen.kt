@@ -8,9 +8,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -60,7 +60,8 @@ fun ProfileScreen(
                 user = currentUser!!,
                 onEditProfileClick = onEditProfileClick,
                 onChangePasswordClick = onChangePasswordClick,
-                onLogoutClick = { viewModel.logout() }
+                onLogoutClick = { viewModel.logout() },
+                viewModel = viewModel
             )
         } else {
             GuestContent(
@@ -76,11 +77,16 @@ fun LoggedInContent(
     user: SessionUser,
     onEditProfileClick: () -> Unit,
     onChangePasswordClick: () -> Unit,
-    onLogoutClick: () -> Unit
+    onLogoutClick: () -> Unit,
+    viewModel: ProfileViewModel
 ) {
+    val scrollState = rememberScrollState()
+    val syncState by viewModel.syncState.collectAsState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(scrollState)
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -127,14 +133,23 @@ fun LoggedInContent(
         ProfileMenuItem(
             icon = Icons.Default.Favorite,
             label = "Đồng bộ Favorites",
-            subtitle = "Dữ liệu server làm gốc",
-            onClick = { /* Handle sync trigger */ }
+            subtitle = if (syncState is SyncStatus.Loading) "Đang đồng bộ..." else "Dữ liệu server làm gốc",
+            onClick = { viewModel.syncFavorites() }
         )
         ProfileMenuItem(
             icon = Icons.Default.History,
             label = "Đồng bộ Lịch sử xem",
-            onClick = { /* Handle sync trigger */ }
+            onClick = { viewModel.syncHistory() }
         )
+
+        if (syncState is SyncStatus.Success) {
+            Text(
+                text = (syncState as SyncStatus.Success).message,
+                color = NeonCyan,
+                fontSize = 12.sp,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+        }
 
         Spacer(modifier = Modifier.weight(1f))
 

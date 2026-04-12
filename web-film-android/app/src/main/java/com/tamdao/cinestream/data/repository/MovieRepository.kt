@@ -174,10 +174,8 @@ class MovieRepository @Inject constructor(
                 val response = authApiService.getFavorites()
                 if (response.success && response.data != null) {
                     val remoteFavs = response.data
-                    // Update local DB: clear and re-insert or merge
-                    // For simplicity, let's clear and re-insert local favorites for this user
-                    // Actually, Room "favorites" table is shared.
-                    movieDao.clearAllFavorites() // If I had this method, or just replace
+                    // Update local DB
+                    movieDao.clearAllFavorites()
                     remoteFavs.forEach { fav ->
                         movieDao.insertFavorite(
                             FavoriteEntity(
@@ -192,6 +190,33 @@ class MovieRepository @Inject constructor(
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to refresh favorites: ${e.localizedMessage}")
+            }
+        }
+    }
+
+    suspend fun refreshWatchHistory() {
+        if (sessionManager.isLoggedIn.first()) {
+            try {
+                val response = authApiService.getHistory()
+                if (response.success && response.data != null) {
+                    val remoteHistory = response.data
+                    remoteHistory.forEach { h ->
+                        movieDao.saveWatchHistory(
+                            WatchHistoryEntity(
+                                slug = h.movieSlug,
+                                title = h.title,
+                                thumbUrl = h.thumbUrl ?: "",
+                                lastEpisodeName = h.lastEpisodeName ?: "",
+                                lastEpisodeSlug = h.lastEpisodeSlug ?: "",
+                                progressMs = h.progressMs ?: 0L,
+                                durationMs = h.durationMs ?: 0L,
+                                updatedAt = System.currentTimeMillis()
+                            )
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to refresh watch history: ${e.localizedMessage}")
             }
         }
     }
