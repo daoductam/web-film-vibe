@@ -27,6 +27,7 @@ import com.tamdao.cinestream.feature.library.LibraryScreen
 import com.tamdao.cinestream.feature.player.VideoPlayerScreen
 import com.tamdao.cinestream.feature.search.SearchScreen
 import com.tamdao.cinestream.feature.profile.*
+import com.tamdao.cinestream.feature.movielist.MovieListScreen
 import com.tamdao.cinestream.ui.theme.CineStreamTheme
 import com.tamdao.cinestream.ui.theme.Obsidian
 import dagger.hilt.android.AndroidEntryPoint
@@ -57,6 +58,9 @@ class MainActivity : ComponentActivity() {
                             HomeScreen(
                                 onMovieClick = { slug ->
                                     navController.navigate(Screen.MovieDetail.createRoute(slug))
+                                },
+                                onSeeAllClick = { title, type ->
+                                    navController.navigate(Screen.MovieList.createRoute(title, type))
                                 },
                                 onSearchClick = {
                                     navController.navigate(Screen.Search.route)
@@ -124,6 +128,28 @@ class MainActivity : ComponentActivity() {
 
                         composable(Screen.ChangePassword.route) {
                             ChangePasswordScreen(
+                                onBackClick = { navController.popBackStack() }
+                            )
+                        }
+
+                        composable(
+                            route = Screen.MovieList.route,
+                            arguments = listOf(
+                                navArgument("title") { type = NavType.StringType },
+                                navArgument("type") { type = NavType.StringType },
+                                navArgument("category") { 
+                                    type = NavType.StringType
+                                    nullable = true 
+                                    defaultValue = null
+                                }
+                            )
+                        ) { backStackEntry ->
+                            val title = backStackEntry.arguments?.getString("title") ?: ""
+                            MovieListScreen(
+                                title = title,
+                                onMovieClick = { slug ->
+                                    navController.navigate(Screen.MovieDetail.createRoute(slug))
+                                },
                                 onBackClick = { navController.popBackStack() }
                             )
                         }

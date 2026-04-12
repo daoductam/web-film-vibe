@@ -80,16 +80,30 @@ class MovieRepository @Inject constructor(
         }
     }
 
+    suspend fun getCategories(): List<CategoryDto> {
+        return try {
+            val response = apiService.getCategories()
+            if (response.success && response.data != null) {
+                response.data
+            } else emptyList()
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
     suspend fun getMoviesByFilter(
         query: String? = null,
-        category: String? = null,
+        type: String? = null,
+        categories: List<String>? = null,
         year: Int? = null,
         page: Int = 0
     ): ApiResponse<com.tamdao.cinestream.data.model.PageResult<MovieDto>> {
         return if (query != null) {
             apiService.searchMovies(query, page)
+        } else if (type == "latest") {
+            apiService.getLatestMovies(page = page)
         } else {
-            apiService.filterMovies(category = category, year = year, page = page)
+            apiService.filterMovies(type = type, categories = categories, year = year, page = page)
         }
     }
 

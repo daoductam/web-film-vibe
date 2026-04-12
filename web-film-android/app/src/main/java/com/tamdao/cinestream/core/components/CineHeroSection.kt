@@ -71,9 +71,9 @@ fun CineHeroSection(
             Spacer(modifier = Modifier.height(8.dp))
             
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(text = movie.year.toString(), color = Color.Gray, fontSize = 14.sp)
+                Text(text = movie.year?.toString() ?: "N/A", color = Color.Gray, fontSize = 14.sp)
                 Text(text = " • ", color = Color.Gray)
-                Text(text = movie.type, color = Color.Gray, fontSize = 14.sp)
+                Text(text = movie.type ?: "MOVIE", color = Color.Gray, fontSize = 14.sp)
                 Text(text = " • ", color = Color.Gray)
                 Text(text = movie.quality ?: "HD", color = NeonCyan, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             }

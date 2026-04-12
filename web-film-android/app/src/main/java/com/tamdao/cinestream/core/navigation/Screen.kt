@@ -16,6 +16,11 @@ sealed class Screen(
     object Search : Screen("search", "Tìm kiếm", Icons.Default.Search)
     object Library : Screen("library", "Thư viện", Icons.Default.VideoLibrary)
     object Profile : Screen("profile", "Cá nhân", Icons.Default.Person)
+    
+    object MovieList : Screen("movie_list/{title}/{type}?category={category}") {
+        fun createRoute(title: String, type: String, category: String? = null) = 
+            "movie_list/$title/$type" + (category?.let { "?category=$it" } ?: "")
+    }
 
     object MovieDetail : Screen("movie_detail/{slug}") {
         fun createRoute(slug: String) = "movie_detail/$slug"

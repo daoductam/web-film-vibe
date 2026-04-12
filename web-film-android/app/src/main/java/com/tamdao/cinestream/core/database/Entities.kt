@@ -6,12 +6,12 @@ import androidx.room.*
 data class MovieEntity(
     @PrimaryKey val id: Long,
     val title: String,
-    val originTitle: String,
+    val originTitle: String?,
     val slug: String,
-    val thumbUrl: String,
-    val posterUrl: String,
-    val year: Int,
-    val type: String,
+    val thumbUrl: String?,
+    val posterUrl: String?,
+    val year: Int?,
+    val type: String?,
     val quality: String?,
     val cacheType: String // "LATEST", "POPULAR", etc.
 )
@@ -32,8 +32,8 @@ data class WatchHistoryEntity(
 data class FavoriteEntity(
     @PrimaryKey val slug: String,
     val title: String,
-    val thumbUrl: String,
+    val thumbUrl: String?,
     val quality: String?,
-    val year: Int,
+    val year: Int?,
     val createdAt: Long = System.currentTimeMillis()
 )

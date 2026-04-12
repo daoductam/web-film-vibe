@@ -1,18 +1,18 @@
 package com.tamdao.cinestream.data.model
 
 data class MovieDto(
-    val id: Long,
-    val title: String,
-    val originTitle: String,
-    val slug: String,
-    val thumbUrl: String,
-    val posterUrl: String,
-    val year: Int,
-    val type: String,
-    val currentEpisode: String?,
-    val quality: String?,
-    val language: String?,
-    val viewCount: Long
+    val id: Long = 0,
+    val title: String = "",
+    val originTitle: String? = null,
+    val slug: String = "",
+    val thumbUrl: String? = null,
+    val posterUrl: String? = null,
+    val year: Int? = null,
+    val type: String? = null,
+    val currentEpisode: String? = null,
+    val quality: String? = null,
+    val language: String? = null,
+    val viewCount: Long = 0
 )
 
 data class MovieDetailDto(
