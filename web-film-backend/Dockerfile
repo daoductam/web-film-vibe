@@ -14,8 +14,11 @@ RUN mvn clean package -DskipTests
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
-# Create a non-root user for security
-RUN addgroup -S spring && adduser -S spring -G spring
+# Create a non-root user for security and set up upload directories
+RUN addgroup -S spring && adduser -S spring -G spring \
+    && mkdir -p /app/uploads/avatars \
+    && chown -R spring:spring /app/uploads
+
 USER spring:spring
 
 # Copy JAR from build stage

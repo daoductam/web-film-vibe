@@ -5,7 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tamdao.cinestream.data.model.ChangePasswordRequest
-import com.tamdao.cinestream.data.network.AuthApiService
+import com.tamdao.cinestream.core.network.AuthApiService
 import com.tamdao.cinestream.data.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow

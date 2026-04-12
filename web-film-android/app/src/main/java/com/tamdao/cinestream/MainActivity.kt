@@ -26,6 +26,7 @@ import com.tamdao.cinestream.feature.home.HomeScreen
 import com.tamdao.cinestream.feature.library.LibraryScreen
 import com.tamdao.cinestream.feature.player.VideoPlayerScreen
 import com.tamdao.cinestream.feature.search.SearchScreen
+import com.tamdao.cinestream.feature.profile.*
 import com.tamdao.cinestream.ui.theme.CineStreamTheme
 import com.tamdao.cinestream.ui.theme.Obsidian
 import dagger.hilt.android.AndroidEntryPoint
