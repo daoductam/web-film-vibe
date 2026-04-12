@@ -17,26 +17,42 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideLoggingInterceptor(): HttpLoggingInterceptor {
-        return HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
-        }
+    fun provideGson(): com.google.gson.Gson {
+        return com.google.gson.Gson()
     }
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(loggingInterceptor: HttpLoggingInterceptor): OkHttpClient {
+    fun provideOkHttpClient(
+        loggingInterceptor: HttpLoggingInterceptor,
+        sessionManager: com.tamdao.cinestream.core.session.SessionManager
+    ): OkHttpClient {
         return OkHttpClient.Builder()
             .addInterceptor(loggingInterceptor)
+            .addInterceptor { chain ->
+                val request = chain.request()
+                val token = kotlinx.coroutines.runBlocking {
+                    sessionManager.accessToken.first()
+                }
+                
+                val newRequest = if (token != null) {
+                    request.newBuilder()
+                        .header("Authorization", "Bearer $token")
+                        .build()
+                } else {
+                    request
+                }
+                chain.proceed(newRequest)
+            }
             .build()
     }
 
     @Provides
     @Singleton
-    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
+    fun provideRetrofit(okHttpClient: OkHttpClient, gson: com.google.gson.Gson): Retrofit {
         return Retrofit.Builder()
             .baseUrl(BASE_URL)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .client(okHttpClient)
             .build()
     }
@@ -45,5 +61,11 @@ object NetworkModule {
     @Singleton
     fun provideMovieApiService(retrofit: Retrofit): MovieApiService {
         return retrofit.create(MovieApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAuthApiService(retrofit: Retrofit): AuthApiService {
+        return retrofit.create(AuthApiService::class.java)
     }
 }

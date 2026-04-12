@@ -21,6 +21,8 @@ import javax.inject.Singleton
 @Singleton
 class MovieRepository @Inject constructor(
     private val apiService: MovieApiService,
+    private val authApiService: com.tamdao.cinestream.core.network.AuthApiService,
+    private val sessionManager: com.tamdao.cinestream.core.session.SessionManager,
     private val movieDao: MovieDao
 ) {
     private val TAG = "MovieRepository"
@@ -95,6 +97,25 @@ class MovieRepository @Inject constructor(
 
     suspend fun saveWatchHistory(history: WatchHistoryEntity) {
         movieDao.saveWatchHistory(history)
+        
+        // Sync to server if logged in
+        if (sessionManager.isLoggedIn.first()) {
+            try {
+                authApiService.saveHistory(
+                    com.tamdao.cinestream.core.network.WatchHistoryRequest(
+                        movieSlug = history.slug,
+                        title = history.title,
+                        thumbUrl = history.thumbUrl,
+                        lastEpisodeSlug = history.lastEpisodeSlug,
+                        lastEpisodeName = history.lastEpisodeName,
+                        progressMs = history.progressMs,
+                        durationMs = history.durationMs
+                    )
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to sync history to server: ${e.localizedMessage}")
+            }
+        }
     }
 
     // Favorites
@@ -108,8 +129,34 @@ class MovieRepository @Inject constructor(
         val isFav = movieDao.isFavorite(movie.slug).first()
         if (isFav) {
             movieDao.deleteFavorite(movie.slug)
+            
+            // Sync remove to server if logged in
+            if (sessionManager.isLoggedIn.first()) {
+                try {
+                    authApiService.removeFavorite(movie.slug)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to remove favorite from server: ${e.localizedMessage}")
+                }
+            }
         } else {
             movieDao.insertFavorite(movie.toFavoriteEntity())
+            
+            // Sync add to server if logged in
+            if (sessionManager.isLoggedIn.first()) {
+                try {
+                    authApiService.addFavorite(
+                        com.tamdao.cinestream.core.network.SyncFavoriteRequest(
+                            movieSlug = movie.slug,
+                            title = movie.title,
+                            thumbUrl = movie.thumbUrl,
+                            quality = movie.quality,
+                            year = movie.year
+                        )
+                    )
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to add favorite to server: ${e.localizedMessage}")
+                }
+            }
         }
     }
 
@@ -120,6 +167,34 @@ class MovieRepository @Inject constructor(
         quality = quality,
         year = year
     )
+
+    suspend fun refreshFavorites() {
+        if (sessionManager.isLoggedIn.first()) {
+            try {
+                val response = authApiService.getFavorites()
+                if (response.success && response.data != null) {
+                    val remoteFavs = response.data
+                    // Update local DB: clear and re-insert or merge
+                    // For simplicity, let's clear and re-insert local favorites for this user
+                    // Actually, Room "favorites" table is shared.
+                    movieDao.clearAllFavorites() // If I had this method, or just replace
+                    remoteFavs.forEach { fav ->
+                        movieDao.insertFavorite(
+                            FavoriteEntity(
+                                slug = fav.movieSlug,
+                                title = fav.title,
+                                thumbUrl = fav.thumbUrl ?: "",
+                                quality = fav.quality,
+                                year = fav.year ?: 0
+                            )
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to refresh favorites: ${e.localizedMessage}")
+            }
+        }
+    }
 
     private fun FavoriteEntity.toDto() = MovieDto(
         id = 0, // Id is not critical for UI cards

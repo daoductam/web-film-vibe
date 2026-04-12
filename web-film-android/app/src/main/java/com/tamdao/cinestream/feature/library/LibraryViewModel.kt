@@ -12,7 +12,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
-    repository: MovieRepository
+    private val repository: MovieRepository
 ) : ViewModel() {
 
     // Danh sách phim yêu thích lấy từ Database (Reactive Flow)
@@ -22,4 +22,10 @@ class LibraryViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
+
+    init {
+        viewModelScope.launch {
+            repository.refreshFavorites()
+        }
+    }
 }

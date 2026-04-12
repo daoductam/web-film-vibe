@@ -83,7 +83,48 @@ class MainActivity : ComponentActivity() {
                         }
                         
                         composable(Screen.Profile.route) {
-                            PlaceholderScreen("Cá nhân", "Quản lý tài khoản và cài đặt")
+                            ProfileScreen(
+                                onLoginClick = { navController.navigate(Screen.Login.route) },
+                                onRegisterClick = { navController.navigate(Screen.Register.route) },
+                                onEditProfileClick = { navController.navigate(Screen.EditProfile.route) },
+                                onChangePasswordClick = { navController.navigate(Screen.ChangePassword.route) }
+                            )
+                        }
+
+                        composable(Screen.Login.route) {
+                            LoginScreen(
+                                onBackClick = { navController.popBackStack() },
+                                onSuccess = { navController.popBackStack() },
+                                onRegisterClick = { 
+                                    navController.navigate(Screen.Register.route) {
+                                        popUpTo(Screen.Login.route) { inclusive = true }
+                                    }
+                                }
+                            )
+                        }
+
+                        composable(Screen.Register.route) {
+                            RegisterScreen(
+                                onBackClick = { navController.popBackStack() },
+                                onSuccess = { navController.popBackStack() },
+                                onLoginClick = {
+                                    navController.navigate(Screen.Login.route) {
+                                        popUpTo(Screen.Register.route) { inclusive = true }
+                                    }
+                                }
+                            )
+                        }
+
+                        composable(Screen.EditProfile.route) {
+                            EditProfileScreen(
+                                onBackClick = { navController.popBackStack() }
+                            )
+                        }
+
+                        composable(Screen.ChangePassword.route) {
+                            ChangePasswordScreen(
+                                onBackClick = { navController.popBackStack() }
+                            )
                         }
 
                         composable(

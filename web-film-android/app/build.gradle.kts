@@ -73,6 +73,9 @@ dependencies {
     // Coil
     implementation(libs.coil.compose)
     
+    // DataStore
+    implementation(libs.androidx.datastore.preferences)
+    
     // Media3 ExoPlayer
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.exoplayer.hls)

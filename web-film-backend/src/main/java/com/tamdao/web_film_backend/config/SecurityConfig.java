@@ -40,6 +40,7 @@ public class SecurityConfig {
             "/v1/categories/**",
             "/v1/countries/**",
             "/v1/auth/**",
+            "/v1/users/avatars/**", // Avatar images served as public static resources
             "/v1/test-crawl/**",  // TEMPORARY: Remove in production
             "/v1/debug/**",       // TEMPORARY: Remove in production
             "/swagger-ui/**",

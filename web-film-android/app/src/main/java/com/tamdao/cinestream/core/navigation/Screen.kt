@@ -24,6 +24,12 @@ sealed class Screen(
     object Player : Screen("player/{slug}/{episodeSlug}") {
         fun createRoute(slug: String, episodeSlug: String) = "player/$slug/$episodeSlug"
     }
+
+    // Auth & Profile
+    object Login : Screen("login")
+    object Register : Screen("register")
+    object EditProfile : Screen("edit_profile")
+    object ChangePassword : Screen("change_password")
 }
 
 val bottomNavItems = listOf(
