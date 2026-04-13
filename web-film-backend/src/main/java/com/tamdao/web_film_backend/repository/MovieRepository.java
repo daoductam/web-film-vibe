@@ -39,13 +39,14 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
             "LEFT JOIN m.categories c " +
             "LEFT JOIN m.countries ct " +
             "WHERE (:type IS NULL OR m.type = :type) " +
-            "AND (:categorySlug IS NULL OR c.slug = :categorySlug) " +
+            "AND (:categoryCount = 0 OR c.slug IN :categorySlugs) " +
             "AND (:countrySlug IS NULL OR ct.slug = :countrySlug) " +
             "AND (:year IS NULL OR m.year = :year) " +
             "AND (:status IS NULL OR m.status = :status)")
     Page<Movie> filterMovies(
             @Param("type") com.tamdao.web_film_backend.entity.MovieType type,
-            @Param("categorySlug") String categorySlug,
+            @Param("categorySlugs") java.util.List<String> categorySlugs,
+            @Param("categoryCount") int categoryCount,
             @Param("countrySlug") String countrySlug,
             @Param("year") Integer year,
             @Param("status") com.tamdao.web_film_backend.entity.MovieStatus status,

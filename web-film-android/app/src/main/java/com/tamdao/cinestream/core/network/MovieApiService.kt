@@ -34,11 +34,14 @@ interface MovieApiService {
     @GET("v1/movies/filter")
     suspend fun filterMovies(
         @Query("type") type: String? = null,
-        @Query("category") category: String? = null,
+        @Query("category") categories: List<String>? = null,
         @Query("country") country: String? = null,
         @Query("year") year: Int? = null,
         @Query("status") status: String? = null,
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 24
     ): ApiResponse<PageResult<MovieDto>>
+
+    @GET("v1/categories")
+    suspend fun getCategories(): ApiResponse<List<CategoryDto>>
 }

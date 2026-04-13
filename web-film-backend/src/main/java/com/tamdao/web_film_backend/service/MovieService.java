@@ -125,7 +125,7 @@ public class MovieService {
      * Filter movies based on various criteria.
      */
     @Transactional(readOnly = true)
-    public Page<MovieResponse> filterMovies(String typeStr, String categorySlug, String countrySlug, Integer year, String statusStr, int page, int size) {
+    public Page<MovieResponse> filterMovies(String typeStr, java.util.List<String> categorySlugs, String countrySlug, Integer year, String statusStr, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         
         com.tamdao.web_film_backend.entity.MovieType type = null;
@@ -142,7 +142,10 @@ public class MovieService {
             } catch (IllegalArgumentException ignored) {}
         }
 
-        return movieRepository.filterMovies(type, categorySlug, countrySlug, year, status, pageable)
+        int categoryCount = (categorySlugs == null || categorySlugs.isEmpty()) ? 0 : categorySlugs.size();
+        java.util.List<String> safeCategorySlugs = categoryCount > 0 ? categorySlugs : java.util.Collections.singletonList("EMPTY_PLACEHOLDER");
+
+        return movieRepository.filterMovies(type, safeCategorySlugs, categoryCount, countrySlug, year, status, pageable)
                 .map(movieMapper::toResponse);
     }
 

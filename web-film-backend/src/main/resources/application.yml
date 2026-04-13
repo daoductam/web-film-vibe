@@ -16,6 +16,13 @@ spring:
       idle-timeout: 600000
       max-lifetime: 1800000
 
+  # Multipart file upload (for avatar images)
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 5MB
+      max-request-size: 6MB
+
   # JPA Configuration
   jpa:
     hibernate:
@@ -54,6 +61,9 @@ app:
     # Base64 encoded 256-bit secret key (32 bytes = 256 bits)
     jwt-secret: ${JWT_SECRET:dGFtZGFvLXdlYi1maWxtLXNlY3JldC1rZXktMjAyNi1wcm9kdWN0aW9uLXZlcnk=}
     jwt-expiration-ms: ${JWT_EXPIRATION:86400000}
+  upload:
+    avatar-dir: ${AVATAR_UPLOAD_DIR:uploads/avatars}
+    base-url: ${APP_BASE_URL:http://localhost:8081/api}
 
 # Logging
 logging:

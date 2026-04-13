@@ -34,6 +34,7 @@ import com.tamdao.cinestream.ui.theme.Obsidian
 @Composable
 fun HomeScreen(
     onMovieClick: (String) -> Unit,
+    onSeeAllClick: (String, String) -> Unit,
     onSearchClick: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
@@ -73,15 +74,43 @@ fun HomeScreen(
                         }
                     }
 
-                    item { MovieSection("Phim Mới Cập Nhật", state.latestMovies, onMovieClick) }
+                    item { 
+                        MovieSection(
+                            title = "Phim Mới Cập Nhật", 
+                            movies = state.latestMovies, 
+                            onMovieClick = onMovieClick,
+                            onSeeAllClick = { onSeeAllClick("Phim Mới", "latest") }
+                        ) 
+                    }
                     if (state.seriesMovies.isNotEmpty()) {
-                        item { MovieSection("Phim Bộ Đặc Sắc", state.seriesMovies, onMovieClick) }
+                        item { 
+                            MovieSection(
+                                title = "Phim Bộ Đặc Sắc", 
+                                movies = state.seriesMovies, 
+                                onMovieClick = onMovieClick,
+                                onSeeAllClick = { onSeeAllClick("Phim Bộ", "series") }
+                            ) 
+                        }
                     }
                     if (state.singleMovies.isNotEmpty()) {
-                        item { MovieSection("Phim Lẻ Mới Nhất", state.singleMovies, onMovieClick) }
+                        item { 
+                            MovieSection(
+                                title = "Phim Lẻ Mới Nhất", 
+                                movies = state.singleMovies, 
+                                onMovieClick = onMovieClick,
+                                onSeeAllClick = { onSeeAllClick("Phim Lẻ", "single") }
+                            ) 
+                        }
                     }
                     if (state.animationMovies.isNotEmpty()) {
-                        item { MovieSection("Hoạt Hình & Anime", state.animationMovies, onMovieClick) }
+                        item { 
+                            MovieSection(
+                                title = "Hoạt Hình & Anime", 
+                                movies = state.animationMovies, 
+                                onMovieClick = onMovieClick,
+                                onSeeAllClick = { onSeeAllClick("Hoạt Hình", "hoathinh") }
+                            ) 
+                        }
                     }
                     
                     item { Spacer(modifier = Modifier.height(100.dp)) }
@@ -171,9 +200,28 @@ fun WatchHistoryCard(item: WatchHistoryEntity, onClick: (String) -> Unit) {
 }
 
 @Composable
-fun MovieSection(title: String, movies: List<com.tamdao.cinestream.data.model.MovieDto>, onMovieClick: (String) -> Unit) {
+fun MovieSection(
+    title: String, 
+    movies: List<com.tamdao.cinestream.data.model.MovieDto>, 
+    onMovieClick: (String) -> Unit,
+    onSeeAllClick: () -> Unit
+) {
     Column(modifier = Modifier.padding(vertical = 16.dp)) {
-        Text(text = title, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(text = title, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text(
+                text = "Xem tất cả",
+                color = NeonCyan,
+                fontSize = 14.sp,
+                modifier = Modifier.clickable { onSeeAllClick() }
+            )
+        }
         LazyRow(contentPadding = PaddingValues(horizontal = 8.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             items(movies) { movie -> CineMovieCard(movie = movie, onClick = onMovieClick) }
         }

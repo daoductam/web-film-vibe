@@ -66,14 +66,15 @@ fun CineMovieCard(
                 }
             }
 
-            // Bottom Gradient
+            // Bottom Gradient - subtle, only at the very bottom
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .fillMaxWidth()
+                    .height(60.dp)
+                    .align(Alignment.BottomStart)
                     .background(
                         Brush.verticalGradient(
-                            listOf(Color.Transparent, Obsidian.copy(alpha = 0.8f)),
-                            startY = 300f
+                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.6f))
                         )
                     )
             )
@@ -91,7 +92,7 @@ fun CineMovieCard(
         )
 
         Text(
-            text = "${movie.year} • ${movie.type}",
+            text = "${movie.year ?: "N/A"} • ${movie.type ?: ""}",
             color = Color.Gray,
             fontSize = 12.sp,
             maxLines = 1

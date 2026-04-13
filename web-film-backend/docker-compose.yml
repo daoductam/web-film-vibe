@@ -39,6 +39,8 @@ services:
       - REDIS_PORT=6379
       - JWT_SECRET=${JWT_SECRET}
       - SERVER_PORT=8081
+    volumes:
+      - cinestream_uploads:/app/uploads
     ports:
       - "8081:8081"
     networks:
@@ -50,3 +52,4 @@ networks:
 
 volumes:
   mysql_data:
+  cinestream_uploads:

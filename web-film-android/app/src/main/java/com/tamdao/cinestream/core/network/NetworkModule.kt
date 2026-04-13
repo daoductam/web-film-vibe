@@ -9,6 +9,7 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import kotlinx.coroutines.flow.first
 import javax.inject.Singleton
 
 @Module
@@ -25,18 +26,42 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(loggingInterceptor: HttpLoggingInterceptor): OkHttpClient {
+    fun provideGson(): com.google.gson.Gson {
+        return com.google.gson.Gson()
+    }
+
+    @Provides
+    @Singleton
+    fun provideOkHttpClient(
+        loggingInterceptor: HttpLoggingInterceptor,
+        sessionManager: com.tamdao.cinestream.core.session.SessionManager
+    ): OkHttpClient {
         return OkHttpClient.Builder()
             .addInterceptor(loggingInterceptor)
+            .addInterceptor { chain: okhttp3.Interceptor.Chain ->
+                val request = chain.request()
+                val token = kotlinx.coroutines.runBlocking {
+                    sessionManager.accessToken.first()
+                }
+                
+                val newRequest = if (token != null) {
+                    request.newBuilder()
+                        .header("Authorization", "Bearer $token")
+                        .build()
+                } else {
+                    request
+                }
+                chain.proceed(newRequest)
+            }
             .build()
     }
 
     @Provides
     @Singleton
-    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
+    fun provideRetrofit(okHttpClient: OkHttpClient, gson: com.google.gson.Gson): Retrofit {
         return Retrofit.Builder()
             .baseUrl(BASE_URL)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .client(okHttpClient)
             .build()
     }
@@ -45,5 +70,11 @@ object NetworkModule {
     @Singleton
     fun provideMovieApiService(retrofit: Retrofit): MovieApiService {
         return retrofit.create(MovieApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAuthApiService(retrofit: Retrofit): AuthApiService {
+        return retrofit.create(AuthApiService::class.java)
     }
 }

@@ -37,4 +37,7 @@ interface MovieDao {
 
     @Query("SELECT EXISTS(SELECT 1 FROM favorites WHERE slug = :slug)")
     fun isFavorite(slug: String): Flow<Boolean>
+
+    @Query("DELETE FROM favorites")
+    suspend fun clearAllFavorites()
 }

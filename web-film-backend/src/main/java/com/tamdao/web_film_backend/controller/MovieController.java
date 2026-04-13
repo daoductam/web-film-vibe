@@ -87,7 +87,7 @@ public class MovieController {
     @Operation(summary = "Filter movies with multiple criteria", description = "Filter by type, category, country, year, status")
     public ResponseEntity<ApiResponse<Page<MovieResponse>>> filterMovies(
             @RequestParam(required = false) String type,
-            @RequestParam(required = false) String category,
+            @RequestParam(required = false) java.util.List<String> category,
             @RequestParam(required = false) String country,
             @RequestParam(required = false) Integer year,
             @RequestParam(required = false) String status,
