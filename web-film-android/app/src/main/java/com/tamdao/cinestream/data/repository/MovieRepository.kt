@@ -7,6 +7,7 @@ import com.tamdao.cinestream.core.database.WatchHistoryEntity
 import com.tamdao.cinestream.core.database.FavoriteEntity
 import com.tamdao.cinestream.core.network.MovieApiService
 import com.tamdao.cinestream.data.model.ApiResponse
+import com.tamdao.cinestream.data.model.CategoryDto
 import com.tamdao.cinestream.data.model.MovieDetailDto
 import com.tamdao.cinestream.data.model.MovieDto
 import kotlinx.coroutines.flow.Flow

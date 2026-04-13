@@ -70,7 +70,7 @@ class SearchViewModel @Inject constructor(
                 // MovieRepository.getMoviesByFilter sẽ ưu tiên Search nếu query != null
                 val response = repository.getMoviesByFilter(
                     query = if (query.trim().length >= 2) query.trim() else null,
-                    category = if (query.isEmpty()) category else null, // Ưu tiên query hơn category
+                    categories = if (query.isEmpty() && category != null) listOf(category) else null, // Ưu tiên query hơn category
                     year = if (query.isEmpty()) year else null
                 )
                 
