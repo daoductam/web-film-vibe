@@ -38,6 +38,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - JWT_SECRET=${JWT_SECRET}
+      - GROQ_API_KEY=${GROQ_API_KEY}
       - SERVER_PORT=8081
     volumes:
       - cinestream_uploads:/app/uploads
