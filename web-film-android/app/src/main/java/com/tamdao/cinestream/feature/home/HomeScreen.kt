@@ -126,7 +126,7 @@ fun HomeScreen(
                 }
             }
             is HomeUiState.Error -> {
-                HomeErrorScreen(state.message)
+                HomeErrorScreen(state.message.asString())
             }
         }
 

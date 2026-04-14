@@ -33,6 +33,10 @@ public class GroqApiClient {
     }
 
     public GroqResponse callChatCompletion(List<GroqMessage> messages) {
+        if (apiKey == null || apiKey.isBlank()) {
+            log.error("Groq API Key is missing! Please set the GROQ_API_KEY environment variable.");
+            throw new RuntimeException("AI Service is currently unavailable: Missing API Configuration.");
+        }
         try {
             GroqRequest requestPayload = GroqRequest.builder()
                     .model(model)
@@ -48,12 +52,18 @@ public class GroqApiClient {
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
                     .bodyValue(requestPayload)
                     .retrieve()
+                    .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(), 
+                        clientResponse -> clientResponse.bodyToMono(String.class)
+                            .flatMap(errorBody -> {
+                                log.error("Groq API Error Response: {}", errorBody);
+                                return reactor.core.publisher.Mono.error(new RuntimeException("Groq API error: " + errorBody));
+                            }))
                     .bodyToMono(GroqResponse.class)
-                    .block(); // Blocking because we want to integrate cleanly with synchronous Spring MVC
+                    .block();
 
         } catch (Exception e) {
             log.error("Error communicating with Groq API", e);
-            throw new RuntimeException("Error communicating with Groq API", e);
+            throw new RuntimeException("Error communicating with Groq API: " + e.getMessage(), e);
         }
     }
 
@@ -63,6 +73,7 @@ public class GroqApiClient {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
     public static class GroqRequest {
         private String model;
         private List<GroqMessage> messages;

@@ -139,7 +139,7 @@ fun ChatBubble(
             modifier = Modifier.widthIn(max = 300.dp)
         ) {
             Text(
-                text = message.content,
+                text = message.content.asString(),
                 modifier = Modifier.padding(12.dp),
                 color = if (message.isFromUser) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
             )

@@ -1,6 +1,6 @@
 package com.tamdao.cinestream.feature.ai_chat.model
 
-import com.tamdao.cinestream.data.model.MovieDto
+import com.tamdao.cinestream.core.util.UiText
 import java.util.UUID
 
 /**
@@ -8,7 +8,7 @@ import java.util.UUID
  */
 data class ChatMessage(
     val id: String = UUID.randomUUID().toString(),
-    val content: String,
+    val content: UiText,
     val isFromUser: Boolean,
     val movies: List<MovieDto> = emptyList(), // Displayed horizontally if not empty
     val isLoading: Boolean = false,

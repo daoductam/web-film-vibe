@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.tamdao.cinestream.core.database.WatchHistoryEntity
 import com.tamdao.cinestream.data.model.MovieDto
 import com.tamdao.cinestream.data.repository.MovieRepository
+import com.tamdao.cinestream.core.util.ErrorMapper
+import com.tamdao.cinestream.core.util.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -42,7 +44,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             repository.getLatestMovies()
                 .catch { e ->
-                    _uiState.value = HomeUiState.Error("Lỗi kết nối: ${e.message}")
+                    _uiState.value = HomeUiState.Error(ErrorMapper.mapToUiText(e))
                 }
                 .collectLatest { latest ->
                     if (latest.isNotEmpty()) {
@@ -59,7 +61,7 @@ class HomeViewModel @Inject constructor(
                             animationMovies = hoathinh
                         )
                     } else {
-                        _uiState.value = HomeUiState.Error("Không có dữ liệu phim.")
+                        _uiState.value = HomeUiState.Error(UiText.DynamicString("Không có dữ liệu phim."))
                     }
                 }
         }
@@ -75,5 +77,5 @@ sealed class HomeUiState {
         val singleMovies: List<MovieDto> = emptyList(),
         val animationMovies: List<MovieDto> = emptyList()
     ) : HomeUiState()
-    data class Error(val message: String) : HomeUiState()
+    data class Error(val message: UiText) : HomeUiState()
 }
