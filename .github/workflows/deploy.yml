@@ -79,6 +79,7 @@ jobs:
             DOCKER_IMAGE="${{ env.REGISTRY }}/${{ github.repository_owner }}/cinestream-backend:${{ env.IMAGE_TAG }}"
             DATABASE_PASSWORD="${{ secrets.DB_PASSWORD }}"
             JWT_SECRET="${{ secrets.JWT_SECRET }}"
+            GROQ_API_KEY="${{ secrets.GROQ_API_KEY }}"
             EOF
             
             # Pull and Restart
