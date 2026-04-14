@@ -44,4 +44,9 @@ interface MovieApiService {
 
     @GET("v1/categories")
     suspend fun getCategories(): ApiResponse<List<CategoryDto>>
+
+    @retrofit2.http.POST("v1/ai/chat")
+    suspend fun chatWithAi(
+        @retrofit2.http.Body request: com.tamdao.cinestream.feature.ai_chat.model.AIChatRequest
+    ): ApiResponse<com.tamdao.cinestream.feature.ai_chat.model.AIChatResponse>
 }

@@ -1,6 +1,7 @@
 package com.tamdao.cinestream.feature.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -31,6 +33,12 @@ import com.tamdao.cinestream.core.database.WatchHistoryEntity
 import com.tamdao.cinestream.ui.theme.NeonCyan
 import com.tamdao.cinestream.ui.theme.Obsidian
 
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.tamdao.cinestream.feature.ai_chat.AiChatBottomSheet
+
 @Composable
 fun HomeScreen(
     onMovieClick: (String) -> Unit,
@@ -40,6 +48,7 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val watchHistory by viewModel.watchHistory.collectAsState()
+    var showAiChat by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize().background(Obsidian)) {
         when (val state = uiState) {
@@ -113,53 +122,112 @@ fun HomeScreen(
                         }
                     }
                     
-                    item { Spacer(modifier = Modifier.height(100.dp)) }
+                    item { Spacer(modifier = Modifier.height(32.dp)) }
                 }
             }
             is HomeUiState.Error -> {
                 HomeErrorScreen(state.message)
             }
         }
+
+        // AI Chat FAB
+        FloatingActionButton(
+            onClick = { showAiChat = true },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp),
+            containerColor = NeonCyan,
+            contentColor = Obsidian
+        ) {
+            Icon(
+                imageVector = Icons.Default.AutoAwesome,
+                contentDescription = "AI CineGuru"
+            )
+        }
+        
+        if (showAiChat) {
+            AiChatBottomSheet(
+                onDismissRequest = { showAiChat = false },
+                onMovieClick = { slug -> 
+                    showAiChat = false
+                    onMovieClick(slug)
+                }
+            )
+        }
     }
 }
 
 @Composable
 fun CineHomeHeader(onSearchClick: () -> Unit) {
-    Row(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .statusBarsPadding()
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Logo CineStream
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(NeonCyan),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(text = "S", color = Obsidian, fontWeight = FontWeight.Black, fontSize = 20.sp)
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "CINESTREAM",
-                color = Color.White,
-                fontWeight = FontWeight.Black,
-                letterSpacing = 2.sp,
-                fontSize = 18.sp
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Obsidian.copy(alpha = 0.9f),
+                        Obsidian.copy(alpha = 0.5f),
+                        Color.Transparent
+                    )
+                )
             )
-        }
-
-        IconButton(
-            onClick = onSearchClick,
+            .statusBarsPadding()
+    ) {
+        Row(
             modifier = Modifier
-                .background(Color.Black.copy(alpha = 0.4f), CircleShape)
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.Search, contentDescription = null, tint = Color.White)
+            // Logo CineStream
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.clickable(onClick = {}) // Ripple effect for logo if needed
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(
+                            Brush.linearGradient(
+                                colors = listOf(NeonCyan, Color(0xFF00BFA5))
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "S",
+                        color = Obsidian,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 22.sp
+                    )
+                }
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = "CINESTREAM",
+                    color = Color.White,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 1.5.sp,
+                    fontSize = 20.sp
+                )
+            }
+
+            IconButton(
+                onClick = onSearchClick,
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.1f))
+                    .border(1.dp, Color.White.copy(alpha = 0.15f), CircleShape)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = "Tìm kiếm",
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
         }
     }
 }
