@@ -32,5 +32,7 @@ public class MovieDetailResponse {
     private String actors;
     private List<CategoryResponse> categories;
     private List<CountryResponse> countries;
+    private Double averageRating;
+    private Long ratingCount;
     private List<ServerEpisodeGroup> servers;
 }

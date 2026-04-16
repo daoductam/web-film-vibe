@@ -6,6 +6,8 @@ import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { Play, Star, Share2, Download, Bookmark, MessageCircle, MonitorPlay } from 'lucide-react';
 import { RelatedMovies } from './RelatedMovies';
+import RatingStars from '../../components/movie/RatingStars';
+import CommentSection from '../../components/movie/CommentSection';
 
 export const MovieDetailPage = () => {
     const { slug } = useParams<{ slug: string }>();
@@ -84,9 +86,14 @@ export const MovieDetailPage = () => {
                                     {movie.title}
                                 </h1>
                                 <div className="flex flex-wrap items-center gap-4 text-sm md:text-base">
-                                    <span className="flex items-center gap-1 text-neon font-bold">
-                                        <Star className="w-4 h-4 fill-current" /> {movie.rating || 'N/A'} IMDb
-                                    </span>
+                                    <div className="flex items-center gap-1">
+                                        <RatingStars 
+                                            movieSlug={movie.slug} 
+                                            initialAverage={movie.averageRating} 
+                                            initialCount={movie.ratingCount}
+                                            size={18}
+                                        />
+                                    </div>
                                     <span className="text-text-secondary">|</span>
                                     <span className="text-white">{movie.year}</span>
                                     <span className="text-text-secondary">|</span>
@@ -214,21 +221,12 @@ export const MovieDetailPage = () => {
                             
                             {/* Comments Section */}
                             <div className="pt-10 border-t border-white/10">
-                                <h2 className="text-2xl font-serif font-bold text-white mb-6">Bình luận & Đánh giá</h2>
-                                <div className="bg-surface border border-white/5 rounded-2xl p-6 mb-8">
-                                    <textarea 
-                                        className="w-full bg-black/30 border border-white/10 rounded-xl p-4 text-white focus:border-neon focus:ring-1 focus:ring-neon transition-all resize-none h-24 placeholder-gray-500 focus:outline-none" 
-                                        placeholder="Chia sẻ cảm nghĩ của bạn về bộ phim này..."
+                                {selectedEpisode && (
+                                    <CommentSection 
+                                        movieSlug={movie.slug} 
+                                        episodeSlug={selectedEpisode.slug} 
                                     />
-                                    <div className="flex justify-between items-center mt-4">
-                                        <div className="flex gap-2 text-text-secondary text-sm">
-                                            <button className="hover:text-white"><MessageCircle className="w-5 h-5" /></button>
-                                        </div>
-                                        <button className="bg-neon hover:bg-white text-obsidian px-6 py-2 rounded-lg font-bold text-sm transition-colors">
-                                            Gửi bình luận
-                                        </button>
-                                    </div>
-                                </div>
+                                )}
                             </div>
 
                         </div>

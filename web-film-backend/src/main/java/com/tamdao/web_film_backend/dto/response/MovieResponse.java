@@ -34,6 +34,8 @@ public class MovieResponse {
     private String actors;
     private Set<CategoryResponse> categories;
     private Set<CountryResponse> countries;
+    private Double averageRating;
+    private Long ratingCount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
