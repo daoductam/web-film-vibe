@@ -2,6 +2,8 @@ package com.tamdao.cinestream.feature.ai_chat
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tamdao.cinestream.core.util.ErrorMapper
+import com.tamdao.cinestream.core.util.UiText
 import com.tamdao.cinestream.feature.ai_chat.model.ChatMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +21,7 @@ class AIChatViewModel @Inject constructor(
     private val _messages = MutableStateFlow<List<ChatMessage>>(
         listOf(
             ChatMessage(
-                content = "Xin chào! Tôi là AI CineGuru. Bạn muốn tìm phim gì hôm nay?",
+                content = UiText.DynamicString("Xin chào! Tôi là AI CineGuru. Bạn muốn tìm phim gì hôm nay?"),
                 isFromUser = false
             )
         )
@@ -29,8 +31,8 @@ class AIChatViewModel @Inject constructor(
     fun sendMessage(text: String) {
         if (text.isBlank()) return
 
-        val userMessage = ChatMessage(content = text.trim(), isFromUser = true)
-        val loadingMessage = ChatMessage(content = "Đang suy nghĩ...", isFromUser = false, isLoading = true)
+        val userMessage = ChatMessage(content = UiText.DynamicString(text.trim()), isFromUser = true)
+        val loadingMessage = ChatMessage(content = UiText.DynamicString("Đang suy nghĩ..."), isFromUser = false, isLoading = true)
 
         _messages.update { current -> current + userMessage + loadingMessage }
 
@@ -43,7 +45,7 @@ class AIChatViewModel @Inject constructor(
                         val index = updatedList.indexOfLast { it.isLoading }
                         if (index != -1) {
                             updatedList[index] = ChatMessage(
-                                content = response.aiMessage,
+                                content = UiText.DynamicString(response.aiMessage),
                                 isFromUser = false,
                                 movies = response.movies?.content ?: emptyList()
                             )
@@ -58,7 +60,7 @@ class AIChatViewModel @Inject constructor(
                         val index = updatedList.indexOfLast { it.isLoading }
                         if (index != -1) {
                             updatedList[index] = ChatMessage(
-                                content = "Đã có lỗi xảy ra: ${error.message ?: "Mất kết nối"}",
+                                content = ErrorMapper.mapToUiText(error),
                                 isFromUser = false,
                                 isError = true
                             )

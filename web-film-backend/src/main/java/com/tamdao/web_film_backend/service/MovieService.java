@@ -11,6 +11,8 @@ import com.tamdao.web_film_backend.mapper.EpisodeMapper;
 import com.tamdao.web_film_backend.mapper.MovieMapper;
 import com.tamdao.web_film_backend.repository.EpisodeRepository;
 import com.tamdao.web_film_backend.repository.MovieRepository;
+import com.tamdao.web_film_backend.repository.RatingRepository;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -29,6 +31,7 @@ public class MovieService {
 
     private final MovieRepository movieRepository;
     private final EpisodeRepository episodeRepository;
+    private final RatingRepository ratingRepository;
     private final MovieMapper movieMapper;
     private final EpisodeMapper episodeMapper;
     private final CategoryMapper categoryMapper;
@@ -41,7 +44,7 @@ public class MovieService {
     public Page<MovieResponse> getLatestMovies(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return movieRepository.findAllByOrderByUpdatedAtDesc(pageable)
-                .map(movieMapper::toResponse);
+                .map(this::enrichWithRating);
     }
 
     /**
@@ -51,7 +54,7 @@ public class MovieService {
     public Page<MovieResponse> getPopularMovies(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return movieRepository.findAllByOrderByViewCountDesc(pageable)
-                .map(movieMapper::toResponse);
+                .map(this::enrichWithRating);
     }
 
     /**
@@ -66,7 +69,7 @@ public class MovieService {
         List<Episode> episodes = episodeRepository.findByMovieIdOrderByServerNameAscNameAsc(movie.getId());
         List<ServerEpisodeGroup> servers = groupEpisodesByServer(episodes);
 
-        return MovieDetailResponse.builder()
+        MovieDetailResponse response = MovieDetailResponse.builder()
                 .id(movie.getId())
                 .title(movie.getTitle())
                 .originTitle(movie.getOriginTitle())
@@ -89,6 +92,20 @@ public class MovieService {
                 .countries(new ArrayList<>(countryMapper.toResponseSet(movie.getCountries())))
                 .servers(servers)
                 .build();
+
+        Double avg = ratingRepository.getAverageScoreByMovieSlug(movie.getSlug());
+        response.setAverageRating(avg != null ? (double) Math.round(avg * 10) / 10 : 0.0);
+        response.setRatingCount(ratingRepository.countByMovieSlug(movie.getSlug()));
+
+        return response;
+    }
+
+    private MovieResponse enrichWithRating(Movie movie) {
+        MovieResponse response = movieMapper.toResponse(movie);
+        Double avg = ratingRepository.getAverageScoreByMovieSlug(movie.getSlug());
+        response.setAverageRating(avg != null ? (double) Math.round(avg * 10) / 10 : 0.0);
+        response.setRatingCount(ratingRepository.countByMovieSlug(movie.getSlug()));
+        return response;
     }
 
     /**

@@ -29,6 +29,9 @@ import coil.compose.AsyncImage
 import com.tamdao.cinestream.ui.theme.NeonCyan
 import com.tamdao.cinestream.ui.theme.Obsidian
 
+import com.tamdao.cinestream.feature.detail.components.CommentSection
+import com.tamdao.cinestream.feature.detail.components.StarRatingBar
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MovieDetailScreen(
@@ -39,6 +42,8 @@ fun MovieDetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val isFavorite by viewModel.isFavorite.collectAsState()
+    val comments by viewModel.comments.collectAsState()
+    val userRating by viewModel.userRating.collectAsState()
 
     LaunchedEffect(slug) {
         viewModel.loadMovieDetail(slug)
@@ -54,7 +59,6 @@ fun MovieDetailScreen(
                     }
                 },
                 actions = {
-                    // Nút Yêu thích (Library)
                     val movie = (uiState as? MovieDetailUiState.Success)?.movie
                     if (movie != null) {
                         IconButton(onClick = { viewModel.toggleFavorite(movie) }) {
@@ -78,6 +82,14 @@ fun MovieDetailScreen(
                 }
                 is MovieDetailUiState.Success -> {
                     val movie = state.movie
+                    
+                    // Tải comment lần đầu cho tập đầu tiên nếu có
+                    LaunchedEffect(movie.slug) {
+                        movie.servers.firstOrNull()?.episodes?.firstOrNull()?.let {
+                            viewModel.loadComments(it.slug)
+                        }
+                    }
+
                     LazyColumn(modifier = Modifier.fillMaxSize()) {
                         item {
                             AsyncImage(
@@ -90,6 +102,18 @@ fun MovieDetailScreen(
                         item {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Text(text = movie.title, color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Black)
+                                
+                                Spacer(modifier = Modifier.height(8.dp))
+                                
+                                // Rating Bar
+                                StarRatingBar(
+                                    rating = movie.averageRating ?: 0.0,
+                                    count = movie.ratingCount ?: 0L,
+                                    userRating = userRating,
+                                    onRate = { score -> viewModel.submitRating(movie.slug, score) }
+                                )
+
+                                Spacer(modifier = Modifier.height(8.dp))
                                 Text(text = "${movie.year} • ${movie.quality} • ${movie.duration}", color = Color.Gray, fontSize = 14.sp)
                                 Spacer(modifier = Modifier.height(16.dp))
                                 Text(text = movie.description ?: "", color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
@@ -98,10 +122,9 @@ fun MovieDetailScreen(
                             }
                         }
                         
-                        // Hiển thị tập phim từ server đầu tiên
                         item {
                             val episodes = movie.servers.firstOrNull()?.episodes ?: emptyList()
-                            Column(modifier = Modifier.padding(horizontal = 16.dp).heightIn(max = 1000.dp)) {
+                            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                                 episodes.chunked(4).forEach { rowEps ->
                                     Row(
                                         modifier = Modifier.padding(vertical = 4.dp).fillMaxWidth(),
@@ -109,7 +132,10 @@ fun MovieDetailScreen(
                                     ) {
                                         rowEps.forEach { ep ->
                                             Button(
-                                                onClick = { onPlayClick(movie.slug, ep.slug) },
+                                                onClick = { 
+                                                    onPlayClick(movie.slug, ep.slug)
+                                                    viewModel.loadComments(ep.slug)
+                                                },
                                                 modifier = Modifier.weight(1f),
                                                 colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.1f)),
                                                 shape = RoundedCornerShape(8.dp),
@@ -118,7 +144,6 @@ fun MovieDetailScreen(
                                                 Text(text = ep.name, color = Color.White, fontSize = 12.sp, textAlign = TextAlign.Center)
                                             }
                                         }
-                                        // Empty spaces to fill the row
                                         repeat(4 - rowEps.size) {
                                             Spacer(modifier = Modifier.weight(1f))
                                         }
@@ -126,6 +151,24 @@ fun MovieDetailScreen(
                                 }
                             }
                         }
+
+                        // Comment Section
+                        item {
+                            Spacer(modifier = Modifier.height(24.dp))
+                            val currentEpisodeSlug = movie.servers.firstOrNull()?.episodes?.firstOrNull()?.slug ?: ""
+                            if (currentEpisodeSlug.isNotEmpty()) {
+                                CommentSection(
+                                    comments = comments,
+                                    onLikeClick = { id -> viewModel.toggleLike(id, currentEpisodeSlug) },
+                                    onReplyClick = { /* Show reply dialog */ },
+                                    onDeleteClick = { /* Not used in this simplified UI */ },
+                                    onSendComment = { content -> 
+                                        viewModel.addComment(movie.slug, currentEpisodeSlug, content)
+                                    }
+                                )
+                            }
+                        }
+                        
                         item { Spacer(modifier = Modifier.height(50.dp)) }
                     }
                 }

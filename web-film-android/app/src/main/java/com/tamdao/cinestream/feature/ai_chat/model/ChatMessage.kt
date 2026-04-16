@@ -1,6 +1,7 @@
 package com.tamdao.cinestream.feature.ai_chat.model
 
 import com.tamdao.cinestream.core.util.UiText
+import com.tamdao.cinestream.data.model.MovieDto
 import java.util.UUID
 
 /**

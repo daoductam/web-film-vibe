@@ -23,7 +23,8 @@ export interface Movie {
     status: string;
     type: string;
     viewCount: number;
-    rating: number;
+    averageRating?: number;
+    ratingCount?: number;
     quality: string;
     language: string;
     duration: string; // or time in backend? usually duration string
@@ -36,6 +37,26 @@ export interface Movie {
     createdAt: string;
     updatedAt: string;
     // Adding optional fields for detail page mapping if needed
+}
+
+export interface Comment {
+    id: number;
+    username: string;
+    fullName: string;
+    avatarUrl: string;
+    content: string;
+    parentId?: number;
+    likeCount: number;
+    isLiked: boolean;
+    replies: Comment[];
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface Rating {
+    averageRating: number;
+    totalRatings: number;
+    userRating?: number;
 }
 
 export interface Episode {

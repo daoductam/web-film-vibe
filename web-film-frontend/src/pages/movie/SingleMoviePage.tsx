@@ -5,6 +5,7 @@ import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { Link } from 'react-router-dom';
 import { Play } from 'lucide-react';
+import RatingStars from '../../components/movie/RatingStars';
 
 export const SingleMoviePage = () => {
     // Filter States
@@ -68,9 +69,14 @@ export const SingleMoviePage = () => {
                                     <div className="px-3 py-1 rounded bg-neon text-obsidian text-xs font-bold tracking-wider shadow-neon-sm">
                                         PHIM LẺ NỔI BẬT
                                     </div>
-                                    <span className="flex items-center gap-1 text-yellow-400 text-sm font-bold">
-                                        <span className="material-symbols-outlined filled text-lg">star</span> {featuredMovie.viewCount ? (featuredMovie.viewCount / 1000).toFixed(1) + 'K' : 'New'}
-                                    </span>
+                                    <div className="flex items-center gap-1">
+                                        <RatingStars 
+                                            movieSlug={featuredMovie.slug} 
+                                            initialAverage={featuredMovie.averageRating} 
+                                            initialCount={featuredMovie.ratingCount}
+                                            size={16}
+                                        />
+                                    </div>
                                     <span className="text-gray-300 text-sm font-medium">{featuredMovie.year} • {featuredMovie.countries?.[0]?.name} • {featuredMovie.duration || '?? min'}</span>
                                     <span className="px-2 py-0.5 rounded border border-gray-600 text-gray-300 text-xs font-bold">{featuredMovie.quality}</span>
                                 </div>
