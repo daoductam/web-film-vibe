@@ -12,8 +12,12 @@ class SocialRepository @Inject constructor(
     private val socialApiService: SocialApiService
 ) {
 
-    suspend fun getComments(episodeSlug: String, page: Int = 0): ApiResponse<PageResult<CommentDto>> {
-        return socialApiService.getComments(episodeSlug, page)
+    suspend fun getMovieComments(movieSlug: String, page: Int = 0): ApiResponse<PageResult<CommentDto>> {
+        return socialApiService.getMovieComments(movieSlug, page)
+    }
+
+    suspend fun getComments(movieSlug: String, episodeSlug: String, page: Int = 0): ApiResponse<PageResult<CommentDto>> {
+        return socialApiService.getComments(movieSlug, episodeSlug, page)
     }
 
     suspend fun addComment(

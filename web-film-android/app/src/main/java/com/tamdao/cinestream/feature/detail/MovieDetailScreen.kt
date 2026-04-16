@@ -83,11 +83,9 @@ fun MovieDetailScreen(
                 is MovieDetailUiState.Success -> {
                     val movie = state.movie
                     
-                    // Tải comment lần đầu cho tập đầu tiên nếu có
+                    // Load movie-wide comments once
                     LaunchedEffect(movie.slug) {
-                        movie.servers.firstOrNull()?.episodes?.firstOrNull()?.let {
-                            viewModel.loadComments(it.slug)
-                        }
+                        viewModel.loadComments(movie.slug)
                     }
 
                     LazyColumn(modifier = Modifier.fillMaxSize()) {
@@ -134,7 +132,7 @@ fun MovieDetailScreen(
                                             Button(
                                                 onClick = { 
                                                     onPlayClick(movie.slug, ep.slug)
-                                                    viewModel.loadComments(ep.slug)
+                                                    // No longer need to reload comments by episode, showing all
                                                 },
                                                 modifier = Modifier.weight(1f),
                                                 colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.1f)),
@@ -155,15 +153,16 @@ fun MovieDetailScreen(
                         // Comment Section
                         item {
                             Spacer(modifier = Modifier.height(24.dp))
-                            val currentEpisodeSlug = movie.servers.firstOrNull()?.episodes?.firstOrNull()?.slug ?: ""
-                            if (currentEpisodeSlug.isNotEmpty()) {
+                            // We still use currentEpisode for context when posting new comments
+                            val firstEpisodeSlug = movie.servers.firstOrNull()?.episodes?.firstOrNull()?.slug ?: ""
+                            if (movie.slug.isNotEmpty()) {
                                 CommentSection(
                                     comments = comments,
-                                    onLikeClick = { id -> viewModel.toggleLike(id, currentEpisodeSlug) },
+                                    onLikeClick = { id -> viewModel.toggleLike(id, movie.slug) },
                                     onReplyClick = { /* Show reply dialog */ },
                                     onDeleteClick = { /* Not used in this simplified UI */ },
                                     onSendComment = { content -> 
-                                        viewModel.addComment(movie.slug, currentEpisodeSlug, content)
+                                        viewModel.addComment(movie.slug, firstEpisodeSlug, content)
                                     }
                                 )
                             }

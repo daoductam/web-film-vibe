@@ -175,6 +175,23 @@ fun CommentItem(
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold
                     )
+                    
+                    if (!comment.episodeName.isNullOrEmpty() && comment.episodeName != "Full") {
+                        Surface(
+                            modifier = Modifier.padding(start = 8.dp),
+                            color = NeonCyan.copy(alpha = 0.1f),
+                            shape = RoundedCornerShape(4.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, NeonCyan.copy(alpha = 0.2f))
+                        ) {
+                            Text(
+                                text = comment.episodeName,
+                                color = NeonCyan,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
                 }
                 Text(
                     text = comment.content,

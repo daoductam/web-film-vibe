@@ -100,6 +100,11 @@ const CommentItem: React.FC<CommentItemProps> = ({
                 <div className="flex-1 flex flex-col gap-1">
                     <div className="flex items-center gap-2">
                         <span className="font-semibold text-gray-200 text-sm">{comment.fullName || comment.username}</span>
+                        {comment.episodeName && comment.episodeName !== 'Full' && (
+                            <span className="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400 text-[10px] font-bold border border-indigo-500/30">
+                                {comment.episodeName}
+                            </span>
+                        )}
                         <span className="text-[10px] text-gray-500">
                             {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: vi })}
                         </span>

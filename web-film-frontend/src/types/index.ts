@@ -48,6 +48,9 @@ export interface Comment {
     parentId?: number;
     likeCount: number;
     isLiked: boolean;
+    movieSlug: string;
+    episodeSlug: string;
+    episodeName: string;
     replies: Comment[];
     createdAt: string;
     updatedAt: string;

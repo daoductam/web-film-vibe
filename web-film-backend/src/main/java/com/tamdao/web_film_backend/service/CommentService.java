@@ -8,6 +8,7 @@ import com.tamdao.web_film_backend.exception.ResourceNotFoundException;
 import com.tamdao.web_film_backend.mapper.CommentMapper;
 import com.tamdao.web_film_backend.repository.CommentLikeRepository;
 import com.tamdao.web_film_backend.repository.CommentRepository;
+import com.tamdao.web_film_backend.repository.MovieRepository;
 import com.tamdao.web_film_backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -27,23 +28,54 @@ public class CommentService {
     private final CommentRepository commentRepository;
     private final CommentLikeRepository likeRepository;
     private final UserRepository userRepository;
+    private final MovieRepository movieRepository;
     private final CommentMapper commentMapper;
 
     @Transactional(readOnly = true)
-    public Page<CommentResponse> getCommentsForEpisode(String episodeSlug, int page, int size) {
+    public Page<CommentResponse> getCommentsForEpisode(String movieSlug, String episodeSlug, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         String currentUsername = getCurrentUsername();
 
-        Page<Comment> mainComments = commentRepository.findByEpisodeSlugAndParentIdIsNullOrderByCreatedAtDesc(episodeSlug, pageable);
+        Page<Comment> mainComments = commentRepository.findByMovieSlugAndEpisodeSlugAndParentIdIsNullOrderByCreatedAtDesc(movieSlug, episodeSlug, pageable);
+
+        com.tamdao.web_film_backend.entity.Movie movie = movieRepository.findBySlug(movieSlug).orElse(null);
+        java.util.Map<String, String> episodeNameMap = movie != null ? 
+            movie.getEpisodes().stream().collect(java.util.stream.Collectors.toMap(com.tamdao.web_film_backend.entity.Episode::getSlug, com.tamdao.web_film_backend.entity.Episode::getName, (a, b) -> a)) : 
+            new java.util.HashMap<>();
 
         return mainComments.map(comment -> {
-            CommentResponse response = mapToResponseWithLikes(comment, currentUsername);
+            CommentResponse response = mapToResponseWithLikes(comment, currentUsername, episodeNameMap);
             
             // Map replies (Level 2)
             List<Comment> replies = commentRepository.findByParentIdOrderByCreatedAtAsc(comment.getId());
             response.setReplies(replies.stream()
-                    .map(reply -> mapToResponseWithLikes(reply, currentUsername))
-                    .collect(Collectors.toList()));
+                    .map(reply -> mapToResponseWithLikes(reply, currentUsername, episodeNameMap))
+                    .collect(java.util.stream.Collectors.toList()));
+            
+            return response;
+        });
+    }
+
+    @Transactional(readOnly = true)
+    public Page<CommentResponse> getCommentsForMovie(String movieSlug, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        String currentUsername = getCurrentUsername();
+
+        Page<Comment> mainComments = commentRepository.findByMovieSlugAndParentIdIsNullOrderByCreatedAtDesc(movieSlug, pageable);
+
+        com.tamdao.web_film_backend.entity.Movie movie = movieRepository.findBySlug(movieSlug).orElse(null);
+        java.util.Map<String, String> episodeNameMap = movie != null ? 
+            movie.getEpisodes().stream().collect(java.util.stream.Collectors.toMap(com.tamdao.web_film_backend.entity.Episode::getSlug, com.tamdao.web_film_backend.entity.Episode::getName, (a, b) -> a)) : 
+            new java.util.HashMap<>();
+
+        return mainComments.map(comment -> {
+            CommentResponse response = mapToResponseWithLikes(comment, currentUsername, episodeNameMap);
+            
+            // Map replies (Level 2)
+            List<Comment> replies = commentRepository.findByParentIdOrderByCreatedAtAsc(comment.getId());
+            response.setReplies(replies.stream()
+                    .map(reply -> mapToResponseWithLikes(reply, currentUsername, episodeNameMap))
+                    .collect(java.util.stream.Collectors.toList()));
             
             return response;
         });
@@ -73,7 +105,19 @@ public class CommentService {
                 .build();
 
         Comment saved = commentRepository.save(comment);
-        return mapToResponseWithLikes(saved, username);
+        
+        // Fetch episode name for response
+        java.util.Map<String, String> episodeNameMap = new java.util.HashMap<>();
+        if (saved.getMovieSlug() != null && saved.getEpisodeSlug() != null) {
+            movieRepository.findBySlug(saved.getMovieSlug()).ifPresent(m -> {
+                m.getEpisodes().stream()
+                    .filter(e -> e.getSlug().equals(saved.getEpisodeSlug()))
+                    .findFirst()
+                    .ifPresent(e -> episodeNameMap.put(e.getSlug(), e.getName()));
+            });
+        }
+
+        return mapToResponseWithLikes(saved, username, episodeNameMap);
     }
 
     @Transactional
@@ -86,15 +130,18 @@ public class CommentService {
             throw new RuntimeException("You can only delete your own comments");
         }
 
-        // Delete associated likes first (if not cascading)
-        // Or if using cascading, just delete
         commentRepository.delete(comment);
     }
 
-    private CommentResponse mapToResponseWithLikes(Comment comment, String currentUsername) {
+    private CommentResponse mapToResponseWithLikes(Comment comment, String currentUsername, java.util.Map<String, String> episodeNameMap) {
         CommentResponse response = commentMapper.toResponse(comment);
         response.setLikeCount(likeRepository.countByCommentId(comment.getId()));
         
+        // Set metadata
+        response.setMovieSlug(comment.getMovieSlug());
+        response.setEpisodeSlug(comment.getEpisodeSlug());
+        response.setEpisodeName(episodeNameMap.getOrDefault(comment.getEpisodeSlug(), "Full"));
+
         if (currentUsername != null && !currentUsername.equals("anonymousUser")) {
             response.setLiked(likeRepository.existsByCommentIdAndUserId(comment.getId(), 
                     userRepository.findByUsername(currentUsername).map(User::getId).orElse(-1L)));

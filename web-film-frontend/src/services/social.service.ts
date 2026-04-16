@@ -3,9 +3,18 @@ import { ApiResponse, Comment, Rating, PageResponse } from '../types';
 
 export const socialService = {
     // Comments
-    getCommentsByEpisode: async (episodeSlug: string, page = 0, size = 10) => {
+    getCommentsByMovie: async (movieSlug: string, page = 0, size = 10) => {
         const response = await api.get<ApiResponse<PageResponse<Comment>>>(
-            `/comments/episode/${episodeSlug}`, {
+            `/comments/movie/${movieSlug}`, {
+                params: { page, size }
+            }
+        );
+        return response.data;
+    },
+
+    getCommentsByEpisode: async (movieSlug: string, episodeSlug: string, page = 0, size = 10) => {
+        const response = await api.get<ApiResponse<PageResponse<Comment>>>(
+            `/comments/movie/${movieSlug}/episode/${episodeSlug}`, {
                 params: { page, size }
             }
         );

@@ -21,12 +21,12 @@ const CommentSection: React.FC<CommentSectionProps> = ({ movieSlug, episodeSlug 
 
     useEffect(() => {
         fetchComments(0, true);
-    }, [episodeSlug]);
+    }, [movieSlug]);
 
     const fetchComments = async (pageNum: number, refresh = false) => {
         setLoading(true);
         try {
-            const response = await socialService.getCommentsByEpisode(episodeSlug, pageNum);
+            const response = await socialService.getCommentsByMovie(movieSlug, pageNum);
             if (response.success) {
                 const newComments = response.data.content;
                 setComments(prev => refresh ? newComments : [...prev, ...newComments]);

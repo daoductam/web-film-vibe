@@ -6,8 +6,16 @@ import retrofit2.http.*
 interface SocialApiService {
 
     // Comments
-    @GET("v1/comments/episode/{slug}")
+    @GET("v1/comments/movie/{movieSlug}")
+    suspend fun getMovieComments(
+        @Path("movieSlug") movieSlug: String,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20
+    ): ApiResponse<PageResult<CommentDto>>
+
+    @GET("v1/comments/movie/{movieSlug}/episode/{slug}")
     suspend fun getComments(
+        @Path("movieSlug") movieSlug: String,
         @Path("slug") episodeSlug: String,
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 20

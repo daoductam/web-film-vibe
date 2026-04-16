@@ -65,10 +65,10 @@ class MovieDetailViewModel @Inject constructor(
         }
     }
 
-    fun loadComments(episodeSlug: String) {
+    fun loadComments(movieSlug: String) {
         viewModelScope.launch {
             try {
-                val response = socialRepository.getComments(episodeSlug)
+                val response = socialRepository.getMovieComments(movieSlug)
                 if (response.success && response.data != null) {
                     _comments.value = response.data.content
                 }
@@ -76,23 +76,23 @@ class MovieDetailViewModel @Inject constructor(
         }
     }
 
-    fun addComment(movieSlug: String?, episodeSlug: String, content: String, parentId: Long? = null) {
+    fun addComment(movieSlug: String, episodeSlug: String, content: String, parentId: Long? = null) {
         viewModelScope.launch {
             try {
                 val response = socialRepository.addComment(movieSlug, episodeSlug, content, parentId)
                 if (response.success && response.data != null) {
-                    loadComments(episodeSlug)
+                    loadComments(movieSlug)
                 }
             } catch (e: Exception) {}
         }
     }
 
-    fun toggleLike(commentId: Long, episodeSlug: String) {
+    fun toggleLike(commentId: Long, movieSlug: String) {
         viewModelScope.launch {
             try {
                 val response = socialRepository.toggleLike(commentId)
                 if (response.success) {
-                    loadComments(episodeSlug)
+                    loadComments(movieSlug)
                 }
             } catch (e: Exception) {}
         }

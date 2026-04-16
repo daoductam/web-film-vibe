@@ -12,6 +12,9 @@ data class CommentDto(
     val likeCount: Long,
     @SerializedName("liked")
     val isLiked: Boolean,
+    val movieSlug: String?,
+    val episodeSlug: String?,
+    val episodeName: String?,
     val replies: List<CommentDto>,
     val createdAt: String,
     val updatedAt: String?

@@ -11,9 +11,13 @@ import java.util.List;
 @Repository
 public interface CommentRepository extends JpaRepository<Comment, Long> {
 
-    Page<Comment> findByEpisodeSlugAndParentIdIsNullOrderByCreatedAtDesc(String episodeSlug, Pageable pageable);
+    Page<Comment> findByMovieSlugAndEpisodeSlugAndParentIdIsNullOrderByCreatedAtDesc(String movieSlug, String episodeSlug, Pageable pageable);
+
+    Page<Comment> findByMovieSlugAndParentIdIsNullOrderByCreatedAtDesc(String movieSlug, Pageable pageable);
 
     List<Comment> findByParentIdOrderByCreatedAtAsc(Long parentId);
 
-    long countByEpisodeSlugAndParentIdIsNull(String episodeSlug);
+    long countByMovieSlugAndEpisodeSlugAndParentIdIsNull(String movieSlug, String episodeSlug);
+
+    long countByMovieSlugAndParentIdIsNull(String movieSlug);
 }

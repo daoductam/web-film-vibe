@@ -23,13 +23,24 @@ public class CommentController {
     private final CommentService commentService;
     private final CommentLikeService likeService;
 
-    @GetMapping("/episode/{episodeSlug}")
-    @Operation(summary = "Get comments for an episode", description = "Fetch paginated comments for a specific episode, including 2-level threaded replies.")
-    public ResponseEntity<ApiResponse<Page<CommentResponse>>> getComments(
+    @GetMapping("/movie/{movieSlug}")
+    @Operation(summary = "Get comments for a movie", description = "Fetch all paginated comments for a specific movie across all episodes.")
+    public ResponseEntity<ApiResponse<Page<CommentResponse>>> getMovieComments(
+            @PathVariable String movieSlug,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<CommentResponse> comments = commentService.getCommentsForMovie(movieSlug, page, size);
+        return ResponseEntity.ok(ApiResponse.success(comments, createPageInfo(comments)));
+    }
+
+    @GetMapping("/movie/{movieSlug}/episode/{episodeSlug}")
+    @Operation(summary = "Get comments for an episode", description = "Fetch paginated comments for a specific episode within a movie.")
+    public ResponseEntity<ApiResponse<Page<CommentResponse>>> getEpisodeComments(
+            @PathVariable String movieSlug,
             @PathVariable String episodeSlug,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        Page<CommentResponse> comments = commentService.getCommentsForEpisode(episodeSlug, page, size);
+            @RequestParam(defaultValue = "10") int size) {
+        Page<CommentResponse> comments = commentService.getCommentsForEpisode(movieSlug, episodeSlug, page, size);
         return ResponseEntity.ok(ApiResponse.success(comments, createPageInfo(comments)));
     }
 

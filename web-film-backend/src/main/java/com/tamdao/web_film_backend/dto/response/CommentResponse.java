@@ -23,6 +23,9 @@ public class CommentResponse {
     private long likeCount;
     private boolean isLiked; // Whether current user liked this comment
     private List<CommentResponse> replies = new ArrayList<>();
+    private String movieSlug;
+    private String episodeSlug;
+    private String episodeName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
