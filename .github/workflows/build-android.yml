@@ -1,0 +1,38 @@
+name: CI Build CineStream Android
+
+on:
+  push:
+    branches: [ "main", "dev" ]
+    paths:
+      - 'web-film-android/**'
+      - '.github/workflows/build-android.yml'
+  workflow_dispatch:
+
+env:
+  WORKING_DIR: web-film-android
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Build APK
+        run: |
+          cd ${{ env.WORKING_DIR }}
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cinestream-app-debug
+          path: ${{ env.WORKING_DIR }}/app/build/outputs/apk/debug/app-debug.apk
