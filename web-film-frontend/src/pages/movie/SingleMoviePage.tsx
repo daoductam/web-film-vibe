@@ -4,7 +4,7 @@ import { movieService } from '../../services/movie.service';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { Link } from 'react-router-dom';
-import { Play, TrendingUp, Calendar, Info } from 'lucide-react';
+import { Play, TrendingUp, Calendar } from 'lucide-react';
 import RatingStars from '../../components/movie/RatingStars';
 import { AdvancedFilter } from '../../components/movie/AdvancedFilter';
 import clsx from 'clsx';

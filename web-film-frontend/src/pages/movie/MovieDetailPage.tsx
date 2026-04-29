@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { movieService } from '../../services/movie.service';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
-import { Play, Star, Share2, Download, Heart, MessageCircle, MonitorPlay } from 'lucide-react';
+import { Play, Share2, Download, Heart, MonitorPlay } from 'lucide-react';
 import { RelatedMovies } from './RelatedMovies';
 import RatingStars from '../../components/movie/RatingStars';
 import CommentSection from '../../components/movie/CommentSection';

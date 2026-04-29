@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { taxonomyService } from '../../services/taxonomy.service';
 import { Filter, ChevronDown, X } from 'lucide-react';

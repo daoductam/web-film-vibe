@@ -4,7 +4,6 @@ import { movieService } from '../../services/movie.service';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { Link } from 'react-router-dom';
-import RatingStars from '../../components/movie/RatingStars';
 import { AdvancedFilter } from '../../components/movie/AdvancedFilter';
 import { Play } from 'lucide-react';
 

@@ -1,4 +1,4 @@
-import { Play, Heart, ThumbsUp } from 'lucide-react';
+import { Play, Heart } from 'lucide-react';
 import type { Movie } from '../../types';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';

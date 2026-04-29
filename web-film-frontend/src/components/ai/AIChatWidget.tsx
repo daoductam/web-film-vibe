@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { aiService } from '../../services/ai.service';
 import type { AIChatMessage } from '../../types';
-import { Bot, X, Send, User, Loader2 } from 'lucide-react';
+import { Bot, X, Send, Loader2 } from 'lucide-react';
 
 export const AIChatWidget = () => {
     const [isOpen, setIsOpen] = useState(false);
