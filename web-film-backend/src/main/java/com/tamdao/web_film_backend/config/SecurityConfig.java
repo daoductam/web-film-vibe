@@ -43,6 +43,7 @@ public class SecurityConfig {
             "/v1/users/avatars/**", // Avatar images served as public static resources
             "/v1/test-crawl/**",  // TEMPORARY: Remove in production
             "/v1/debug/**",       // TEMPORARY: Remove in production
+            "/v1/ai/**",
             "/swagger-ui/**",
             "/swagger-ui.html",
             "/v3/api-docs/**",
@@ -57,6 +58,8 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/v1/comments/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/v1/ratings/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/v1/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()

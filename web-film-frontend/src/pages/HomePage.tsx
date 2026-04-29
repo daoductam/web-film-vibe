@@ -48,7 +48,7 @@ export const HomePage = () => {
             <main className="min-h-screen">
                 <HeroSection />
                 
-                <div className="relative z-30 -mt-20 pb-20 space-y-24">
+                <div className="relative z-30 mt-10 md:-mt-20 pb-20 space-y-16 md:space-y-24">
                     {/* Inject Real Data */}
                     {latestMovies?.content && (
                          <MovieSection title="Phim mới cập nhật" movies={latestMovies.content} />

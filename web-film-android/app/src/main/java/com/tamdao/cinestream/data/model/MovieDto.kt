@@ -12,7 +12,9 @@ data class MovieDto(
     val currentEpisode: String? = null,
     val quality: String? = null,
     val language: String? = null,
-    val viewCount: Long = 0
+    val viewCount: Long = 0,
+    val averageRating: Double? = null,
+    val ratingCount: Long? = null
 )
 
 data class MovieDetailDto(
@@ -36,7 +38,9 @@ data class MovieDetailDto(
     val actors: String?,
     val categories: List<CategoryDto>,
     val countries: List<CountryDto>,
-    val servers: List<ServerEpisodeGroupDto>
+    val servers: List<ServerEpisodeGroupDto>,
+    val averageRating: Double? = null,
+    val ratingCount: Long? = null
 )
 
 data class CategoryDto(val id: Long?, val name: String, val slug: String)

@@ -28,8 +28,9 @@ export const movieService = {
     },
 
     searchMovies: async (keyword: string, page = 1, size = 24): Promise<PageResponse<Movie>> => {
+        const apiPage = Math.max(0, page - 1);
         const response = await api.get<ApiResponse<PageResponse<Movie>>>('/movies/search', {
-            params: { q: keyword, page: page - 1, size }
+            params: { q: keyword, page: apiPage, size }
         });
         return response.data.data;
     },
@@ -45,8 +46,9 @@ export const movieService = {
         size?: number;
     }): Promise<PageResponse<Movie>> => {
         const { page = 1, size = 24, ...rest } = params;
+        const apiPage = Math.max(0, page - 1);
         const response = await api.get<ApiResponse<PageResponse<Movie>>>('/movies/filter', {
-            params: { ...rest, page: page - 1, size }
+            params: { ...rest, page: apiPage, size }
         });
         return response.data.data;
     },

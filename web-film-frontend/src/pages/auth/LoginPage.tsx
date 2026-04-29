@@ -1,5 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { authService } from '../../services/auth.service';
+import { useAuthStore } from '../../store/authStore';
+import { useToast } from '../../components/common/Toast';
 
 export const LoginPage = () => {
     const [showPassword, setShowPassword] = useState(false);
@@ -7,12 +10,27 @@ export const LoginPage = () => {
     const [password, setPassword] = useState('');
     const navigate = useNavigate();
 
-    const handleLogin = (e: React.FormEvent) => {
+    const { setAuth, token } = useAuthStore();
+    const { showToast } = useToast();
+
+    // Redirect if already logged in
+    useEffect(() => {
+        if (token) {
+            navigate('/');
+        }
+    }, [token, navigate]);
+
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Placeholder login logic
-        console.log('Login with:', { email, password });
-        // For demo purposes, just go home
-        navigate('/');
+        try {
+            const data = await authService.login({ username: email, password });
+            setAuth(data.accessToken, data.user);
+            showToast('Đăng nhập thành công! Chào mừng bạn trở lại.', 'success');
+            navigate('/');
+        } catch (error: any) {
+            console.error('Login failed:', error);
+            showToast(error.response?.data?.message || 'Email hoặc mật khẩu không chính xác!', 'error');
+        }
     };
 
     return (

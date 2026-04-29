@@ -46,7 +46,9 @@ export const MovieSection = ({ title, movies = [] }: MovieSectionProps) => {
                 className="flex gap-6 overflow-x-auto hide-scrollbar pb-20 pt-10 snap-x px-4 -mx-4"
             >
                 {movies.map((movie) => (
-                    <MovieCard key={movie.id} movie={movie} />
+                    <div key={movie.id} className="w-[160px] xs:w-[180px] sm:w-[200px] md:w-[240px] shrink-0 snap-start">
+                        <MovieCard movie={movie} />
+                    </div>
                 ))}
             </div>
         </section>

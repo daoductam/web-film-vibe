@@ -52,13 +52,8 @@ class MovieRepository @Inject constructor(
                 throw Exception(response.message ?: "Lỗi API không xác định")
             }
         } catch (e: HttpException) {
-            val errorMsg = when (e.code()) {
-                403 -> "Lỗi 403: Server từ chối truy cập (Kiểm tra Spring Security)"
-                404 -> "Lỗi 404: Không tìm thấy API"
-                else -> "Lỗi HTTP: ${e.code()}"
-            }
-            Log.e(TAG, errorMsg)
-            throw Exception(errorMsg)
+            Log.e(TAG, "HTTP Error: ${e.code()} - ${e.message()}")
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Network Error: ${e.localizedMessage}")
             // Nếu cache rỗng và network lỗi thì mới ném lỗi
