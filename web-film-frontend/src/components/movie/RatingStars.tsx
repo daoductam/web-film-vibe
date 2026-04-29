@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Star } from 'lucide-react';
 import { socialService } from '../../services/social.service';
+import { useAuthStore } from '../../store/authStore';
+import { useToast } from '../common/Toast';
+import { useNavigate } from 'react-router-dom';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -26,14 +29,18 @@ const RatingStars: React.FC<RatingStarsProps> = ({
     size = 20,
     interactive = true,
 }) => {
-    const [average, setAverage] = useState(initialAverage);
-    const [count, setCount] = useState(initialCount);
+    const [average, setAverage] = useState(initialAverage || 0);
+    const [count, setCount] = useState(initialCount || 0);
     const [userRating, setUserRating] = useState(initialUserRating);
     const [hoverRating, setHoverRating] = useState(0);
     const [loading, setLoading] = useState(false);
 
+    const { token } = useAuthStore();
+    const { showToast } = useToast();
+    const navigate = useNavigate();
+
     useEffect(() => {
-        if (!initialAverage || !initialCount) {
+        if (initialAverage === undefined || initialCount === undefined) {
             fetchRating();
         }
     }, [movieSlug]);
@@ -42,8 +49,8 @@ const RatingStars: React.FC<RatingStarsProps> = ({
         try {
             const response = await socialService.getMovieRating(movieSlug);
             if (response.success) {
-                setAverage(response.data.averageRating);
-                setCount(response.data.totalRatings);
+                setAverage(response.data.averageRating || 0);
+                setCount(response.data.totalRatings || 0);
                 setUserRating(response.data.userRating);
             }
         } catch (error) {
@@ -53,17 +60,25 @@ const RatingStars: React.FC<RatingStarsProps> = ({
 
     const handleRate = async (score: number) => {
         if (!interactive || loading) return;
+        
+        if (!token) {
+            showToast('Vui lòng đăng nhập để đánh giá phim!', 'info');
+            navigate('/login');
+            return;
+        }
+
         setLoading(true);
         try {
             const response = await socialService.addOrUpdateRating(movieSlug, score);
             if (response.success) {
                 setUserRating(score);
+                showToast(`Bạn đã đánh giá ${score} sao!`, 'success');
                 // Refresh overall stats
                 fetchRating();
             }
         } catch (error) {
             console.error('Failed to rate:', error);
-            // In a real app, show a toast here (e.g. "Login to rate")
+            showToast('Không thể gửi đánh giá lúc này', 'error');
         } finally {
             setLoading(false);
         }
@@ -72,8 +87,7 @@ const RatingStars: React.FC<RatingStarsProps> = ({
     const renderStar = (index: number) => {
         const starValue = index + 1;
         const isSelected = (hoverRating || userRating || 0) >= starValue;
-        const isHalf = !hoverRating && !userRating && average >= starValue - 0.5 && average < starValue;
-
+        
         return (
             <motion.button
                 key={index}
@@ -89,10 +103,12 @@ const RatingStars: React.FC<RatingStarsProps> = ({
                 onClick={() => handleRate(starValue)}
                 disabled={loading}
             >
-                <Star
-                    size={size}
-                    fill={(isSelected || isHalf) ? "currentColor" : "none"}
-                    strokeWidth={2}
+                <Star 
+                    size={size} 
+                    className={cn(
+                        "transition-all duration-300",
+                        isSelected ? "fill-current drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]" : "fill-transparent"
+                    )} 
                 />
             </motion.button>
         );
@@ -103,7 +119,7 @@ const RatingStars: React.FC<RatingStarsProps> = ({
             <div className="flex items-center gap-1">
                 {[...Array(5)].map((_, i) => renderStar(i))}
                 <span className="ml-2 text-sm font-medium text-gray-300">
-                    {average.toFixed(1)} <span className="text-gray-500 text-xs">({count} lượt)</span>
+                    {(average || 0).toFixed(1)} <span className="text-gray-500 text-xs">({count || 0} lượt)</span>
                 </span>
             </div>
             <AnimatePresence>

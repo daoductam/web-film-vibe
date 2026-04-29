@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Menu, X, Play } from 'lucide-react';
+import { Search, Menu, X, Play, User, LogOut } from 'lucide-react';
 import clsx from 'clsx';
+import { useAuthStore } from '../../store/authStore';
 
 export const Navbar = () => {
     const [scrolled, setScrolled] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const navigate = useNavigate();
+    const { user, logout } = useAuthStore();
 
     useEffect(() => {
         const handleScroll = () => {
@@ -103,12 +106,49 @@ export const Navbar = () => {
                             <Search size={22} />
                         </button>
 
-                        <Link to="/login" className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-sm font-bold text-white transition-all backdrop-blur-md">
-                            Đăng nhập
-                        </Link>
-                        <button className="px-4 py-2 rounded-full bg-neon hover:bg-white hover:text-obsidian text-obsidian text-xs md:text-sm font-bold transition-all shadow-neon hover:shadow-white-glow whitespace-nowrap">
-                            Dùng thử <span className="hidden xs:inline">miễn phí</span>
-                        </button>
+                        {user ? (
+                            <div className="relative">
+                                <button 
+                                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                                    className="flex items-center gap-2"
+                                >
+                                    <div className="size-8 md:size-10 rounded-full border border-neon bg-white/10 overflow-hidden flex items-center justify-center">
+                                        {user.avatarUrl ? (
+                                            <img src={`http://localhost:8081/api/v1/users/avatars/${user.avatarUrl}`} alt="avatar" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <User className="w-5 h-5 text-gray-300" />
+                                        )}
+                                    </div>
+                                </button>
+
+                                {isUserMenuOpen && (
+                                    <div className="absolute right-0 mt-2 w-48 bg-surface border border-white/10 rounded-xl shadow-xl overflow-hidden animate-in slide-in-from-top-2">
+                                        <Link to="/profile" className="flex items-center gap-2 px-4 py-3 text-sm text-white hover:bg-white/10 transition-colors">
+                                            <User size={16} /> Hồ sơ
+                                        </Link>
+                                        <button 
+                                            onClick={() => {
+                                                logout();
+                                                setIsUserMenuOpen(false);
+                                                navigate('/');
+                                            }}
+                                            className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-400 hover:bg-white/10 transition-colors text-left"
+                                        >
+                                            <LogOut size={16} /> Đăng xuất
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <>
+                                <Link to="/login" className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-sm font-bold text-white transition-all backdrop-blur-md">
+                                    Đăng nhập
+                                </Link>
+                                <button className="px-4 py-2 rounded-full bg-neon hover:bg-white hover:text-obsidian text-obsidian text-xs md:text-sm font-bold transition-all shadow-neon hover:shadow-white-glow whitespace-nowrap">
+                                    Dùng thử <span className="hidden xs:inline">miễn phí</span>
+                                </button>
+                            </>
+                        )}
                     </div>
                 </div>
 
@@ -171,16 +211,36 @@ export const Navbar = () => {
                     </div>
 
                     <div className="mt-auto space-y-4 pt-10">
-                        <Link 
-                            to="/login" 
-                            onClick={() => setIsMenuOpen(false)}
-                            className="bg-white/5 border border-white/10 text-white w-full py-4 rounded-2xl flex items-center justify-center font-bold text-lg"
-                        >
-                            Đăng nhập thành viên
-                        </Link>
-                        <button className="bg-neon text-obsidian w-full py-4 rounded-2xl flex items-center justify-center font-black text-lg shadow-neon">
-                            Dùng thử miễn phí
-                        </button>
+                        {user ? (
+                            <>
+                                <Link 
+                                    to="/profile" 
+                                    onClick={() => setIsMenuOpen(false)}
+                                    className="bg-white/5 border border-white/10 text-white w-full py-4 rounded-2xl flex items-center justify-center font-bold text-lg"
+                                >
+                                    Hồ sơ của tôi
+                                </Link>
+                                <button 
+                                    onClick={() => { logout(); setIsMenuOpen(false); navigate('/'); }}
+                                    className="bg-red-500/20 text-red-400 border border-red-500/30 w-full py-4 rounded-2xl flex items-center justify-center font-bold text-lg"
+                                >
+                                    Đăng xuất
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <Link 
+                                    to="/login" 
+                                    onClick={() => setIsMenuOpen(false)}
+                                    className="bg-white/5 border border-white/10 text-white w-full py-4 rounded-2xl flex items-center justify-center font-bold text-lg"
+                                >
+                                    Đăng nhập thành viên
+                                </Link>
+                                <button className="bg-neon text-obsidian w-full py-4 rounded-2xl flex items-center justify-center font-black text-lg shadow-neon">
+                                    Dùng thử miễn phí
+                                </button>
+                            </>
+                        )}
                     </div>
                 </nav>
             </div>

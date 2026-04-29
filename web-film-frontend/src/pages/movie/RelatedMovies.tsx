@@ -52,7 +52,7 @@ export const RelatedMovies = ({ categorySlug }: RelatedMoviesProps) => {
                         </h4>
                         <p className="text-text-secondary text-xs mt-1">{movie.year} • {movie.quality}</p>
                         <div className="flex items-center gap-1 mt-2 text-neon text-xs font-bold">
-                            <Star className="w-3 h-3 fill-current" /> {movie.rating || 'N/A'}
+                            <Star className="w-3 h-3 fill-current" /> {movie.averageRating?.toFixed(1) || '0.0'}
                         </div>
                     </div>
                 </a>

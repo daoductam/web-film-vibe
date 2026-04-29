@@ -1,16 +1,21 @@
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 import { movieService } from '../../services/movie.service';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
-import { Play, Star, Share2, Download, Bookmark, MessageCircle, MonitorPlay } from 'lucide-react';
+import { Play, Star, Share2, Download, Heart, MessageCircle, MonitorPlay } from 'lucide-react';
 import { RelatedMovies } from './RelatedMovies';
 import RatingStars from '../../components/movie/RatingStars';
 import CommentSection from '../../components/movie/CommentSection';
+import { useAuthStore } from '../../store/authStore';
+import { personalizationService } from '../../services/personalization.service';
+import { useToast } from '../../components/common/Toast';
 
 export const MovieDetailPage = () => {
     const { slug } = useParams<{ slug: string }>();
+    const navigate = useNavigate();
+    const { showToast } = useToast();
 
     // Fetch movie detail
     const { data: movie, isLoading } = useQuery({
@@ -20,7 +25,10 @@ export const MovieDetailPage = () => {
     });
 
     const [isPlaying, setIsPlaying] = useState(false);
-    const [selectedEpisode, setSelectedEpisode] = useState<any>(null); // Use Episode type properly if imported
+    const [selectedEpisode, setSelectedEpisode] = useState<any>(null);
+    const [isFavorite, setIsFavorite] = useState(false);
+    const [isSavingFav, setIsSavingFav] = useState(false);
+    const { token } = useAuthStore();
 
     // Flatten episodes from all servers for easier access (or prefer first server)
     const allEpisodes = movie?.servers?.flatMap((s:any) => s.episodes) || [];
@@ -28,10 +36,52 @@ export const MovieDetailPage = () => {
     // Reset state when movie changes
     useEffect(() => {
         if (allEpisodes.length > 0) {
-            // Default to first episode of first server
             setSelectedEpisode(allEpisodes[0]);
         }
     }, [movie]);
+
+    // Check if favorite initially
+    useEffect(() => {
+        if (token && movie?.slug) {
+            personalizationService.getFavorites().then(favs => {
+                setIsFavorite(favs.some(f => f.movieSlug === movie.slug));
+            }).catch(console.error);
+        }
+    }, [token, movie?.slug]);
+
+    const handleToggleFavorite = async () => {
+        if (!token) {
+            showToast('Vui lòng đăng nhập để lưu phim vào yêu thích!', 'info');
+            navigate('/login');
+            return;
+        }
+        if (!movie?.slug) return;
+        
+        setIsSavingFav(true);
+        try {
+            if (isFavorite) {
+                await personalizationService.removeFavorite(movie.slug);
+                setIsFavorite(false);
+                showToast('Đã xóa khỏi danh sách yêu thích', 'info');
+            } else {
+                await personalizationService.addFavorite({ 
+                    movieSlug: movie.slug, 
+                    title: movie.title,
+                    thumbUrl: movie.thumbUrl || movie.posterUrl,
+                    quality: movie.quality,
+                    year: movie.year,
+                    createdAt: new Date().toISOString() 
+                });
+                setIsFavorite(true);
+                showToast('Đã thêm vào danh sách yêu thích!', 'success');
+            }
+        } catch (error) {
+            console.error('Lỗi khi cập nhật yêu thích', error);
+            showToast('Không thể cập nhật danh sách yêu thích', 'error');
+        } finally {
+            setIsSavingFav(false);
+        }
+    };
 
     if (isLoading) {
          return (
@@ -46,6 +96,15 @@ export const MovieDetailPage = () => {
     const handlePlay = () => {
         if (selectedEpisode?.linkEmbed) {
             setIsPlaying(true);
+            // Save watch history automatically
+            if (token && movie?.slug && selectedEpisode.slug) {
+                personalizationService.saveHistory({
+                    movieSlug: movie.slug,
+                    episodeSlug: selectedEpisode.slug,
+                    progressMs: 0,
+                    durationMs: 0
+                }).catch(console.error);
+            }
         } else {
             alert("Phim này chưa có link server!");
         }
@@ -234,10 +293,14 @@ export const MovieDetailPage = () => {
                         {/* Sidebar (Right Column) */}
                         <div className="lg:col-span-3 space-y-8">
                             <div className="glass-card p-5 rounded-2xl space-y-3">
-                                <button className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-white/10 text-white font-bold hover:bg-neon hover:text-obsidian transition-all group">
-                                    <Bookmark className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                                    Lưu vào danh sách
-                                </button>
+                                <button 
+                                onClick={handleToggleFavorite}
+                                disabled={isSavingFav}
+                                className={`flex items-center gap-2 px-6 py-3 rounded-xl border transition-all ${isFavorite ? 'bg-red-500/10 border-red-500 text-red-500' : 'border-white/10 text-white hover:bg-white/5'}`}
+                            >
+                                <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
+                                <span>{isFavorite ? 'Đã yêu thích' : 'Yêu thích'}</span>
+                            </button>
                                 <button className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-white/10 text-white font-bold hover:bg-neon hover:text-obsidian transition-all group">
                                     <Download className="w-5 h-5 group-hover:scale-110 transition-transform" />
                                     Tải xuống

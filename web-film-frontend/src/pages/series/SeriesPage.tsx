@@ -4,6 +4,8 @@ import { movieService } from '../../services/movie.service';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { Link } from 'react-router-dom';
+import RatingStars from '../../components/movie/RatingStars';
+import { AdvancedFilter } from '../../components/movie/AdvancedFilter';
 import { Play } from 'lucide-react';
 
 export const SeriesPage = () => {
@@ -102,56 +104,18 @@ export const SeriesPage = () => {
                     <div className="max-w-[1600px] mx-auto px-6 py-4">
                         <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
                             <div className="flex flex-wrap gap-4 w-full md:w-auto">
-                                {/* Genre Filter */}
-                                    <div className="relative group">
-                                    <select 
-                                        className="appearance-none bg-surface border border-white/10 text-white rounded-lg px-4 py-2 pr-10 focus:outline-none focus:border-neon focus:ring-1 focus:ring-neon text-sm w-full md:w-40 hover:bg-white/5 transition-colors cursor-pointer"
-                                        value={filters.category}
-                                        onChange={(e) => handleFilterChange('category', e.target.value)}
-                                    >
-                                        <option value="" className="bg-gray-900 text-white">Thể loại</option>
-                                        <option value="hanh-dong" className="bg-gray-900 text-white">Hành động</option>
-                                        <option value="tinh-cam" className="bg-gray-900 text-white">Tình cảm</option>
-                                        <option value="co-trang" className="bg-gray-900 text-white">Cổ trang</option>
-                                        <option value="tam-ly" className="bg-gray-900 text-white">Tâm lý</option>
-                                        <option value="hai-huoc" className="bg-gray-900 text-white">Hài hước</option>
-                                        <option value="hinh-su" className="bg-gray-900 text-white">Hình sự</option>
-                                        <option value="kinh-di" className="bg-gray-900 text-white">Kinh dị</option>
-                                    </select>
-                                </div>
-
-                                {/* Country Filter */}
-                                <div className="relative group">
-                                    <select 
-                                        className="appearance-none bg-surface border border-white/10 text-white rounded-lg px-4 py-2 pr-10 focus:outline-none focus:border-neon focus:ring-1 focus:ring-neon text-sm w-full md:w-40 hover:bg-white/5 transition-colors cursor-pointer"
-                                        value={filters.country}
-                                        onChange={(e) => handleFilterChange('country', e.target.value)}
-                                    >
-                                        <option value="" className="bg-gray-900 text-white">Quốc gia</option>
-                                        <option value="trung-quoc" className="bg-gray-900 text-white">Trung Quốc</option>
-                                        <option value="han-quoc" className="bg-gray-900 text-white">Hàn Quốc</option>
-                                        <option value="au-my" className="bg-gray-900 text-white">Âu Mỹ</option>
-                                        <option value="nhat-ban" className="bg-gray-900 text-white">Nhật Bản</option>
-                                        <option value="viet-nam" className="bg-gray-900 text-white">Việt Nam</option>
-                                        <option value="thai-lan" className="bg-gray-900 text-white">Thái Lan</option>
-                                    </select>
-                                </div>
-
-                                {/* Year Filter */}
-                                <div className="relative group">
-                                    <select 
-                                        className="appearance-none bg-surface border border-white/10 text-white rounded-lg px-4 py-2 pr-10 focus:outline-none focus:border-neon focus:ring-1 focus:ring-neon text-sm w-full md:w-40 hover:bg-white/5 transition-colors cursor-pointer"
-                                        value={filters.year}
-                                        onChange={(e) => handleFilterChange('year', e.target.value)}
-                                    >
-                                        <option value="" className="bg-gray-900 text-white">Năm phát hành</option>
-                                        <option value="2025" className="bg-gray-900 text-white">2025</option>
-                                        <option value="2024" className="bg-gray-900 text-white">2024</option>
-                                        <option value="2023" className="bg-gray-900 text-white">2023</option>
-                                        <option value="2022" className="bg-gray-900 text-white">2022</option>
-                                        <option value="2021" className="bg-gray-900 text-white">2021</option>
-                                    </select>
-                                </div>
+                                {/* Advanced Filter Component */}
+                                <AdvancedFilter 
+                                    onFilterChange={(newFilters) => {
+                                        setFilters(prev => ({
+                                            ...prev,
+                                            category: newFilters.categorySlug || '',
+                                            country: newFilters.countrySlug || '',
+                                            year: newFilters.year || ''
+                                        }));
+                                        setPage(1);
+                                    }}
+                                />
 
                                 {/* Status Filter */}
                                 <div className="relative group">

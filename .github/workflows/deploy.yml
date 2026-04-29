@@ -1,25 +1,31 @@
-name: CICD CineStream Backend
+name: CI/CD CineStream Multi-Platform
 
 on:
   push:
-    branches: [ "main", "dev" ]
+    branches: [ "main" ]
     paths:
       - 'web-film-backend/**'
+      - 'web-film-frontend/**'
+      - 'web-film-android/**'
       - '.github/workflows/deploy.yml'
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: backend
-  WORKING_DIR: web-film-backend
-  IMAGE_TAG: ${{ github.ref_name == 'main' && 'latest' || github.ref_name }}
+  BACKEND_IMAGE_NAME: cinestream-backend
+  WORKING_DIR_BACKEND: web-film-backend
+  WORKING_DIR_FRONTEND: web-film-frontend
+  WORKING_DIR_ANDROID: web-film-android
 
 jobs:
-  build-and-push:
+  # ==========================================
+  # JOB 1: BACKEND (DOCKER)
+  # ==========================================
+  deploy-backend:
+    if: github.event_name == 'push' && (contains(github.event.head_commit.modified, 'web-film-backend/') || contains(github.event.head_commit.added, 'web-film-backend/'))
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -31,26 +37,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ github.repository }}/backend
-
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: ./${{ env.WORKING_DIR }}
+          context: ./${{ env.WORKING_DIR_BACKEND }}
           push: true
-          tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/cinestream-backend:${{ env.IMAGE_TAG }}
-          labels: ${{ steps.meta.outputs.labels }}
-
-  deploy:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+          tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.BACKEND_IMAGE_NAME }}:latest
 
       - name: Copy Docker Compose to VPS
         uses: appleboy/scp-action@master
@@ -58,33 +50,99 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "${{ env.WORKING_DIR }}/docker-compose.yml"
+          source: "${{ env.WORKING_DIR_BACKEND }}/docker-compose.yml"
           target: "~/cinestream"
           strip_components: 1
 
-      - name: Deploy to VPS via SSH
+      - name: Deploy Backend via SSH
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            mkdir -p ~/cinestream
             cd ~/cinestream
-            
-            # Login to GitHub Container Registry on VPS
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            
-            # Create .env file for secrets
             cat > .env << EOF
-            DOCKER_IMAGE="${{ env.REGISTRY }}/${{ github.repository_owner }}/cinestream-backend:${{ env.IMAGE_TAG }}"
+            DOCKER_IMAGE="${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.BACKEND_IMAGE_NAME }}:latest"
             DATABASE_PASSWORD="${{ secrets.DB_PASSWORD }}"
             JWT_SECRET="${{ secrets.JWT_SECRET }}"
-            GROQ_API_KEY="${{ secrets.GROQ_API_KEY }}"
             EOF
-            
-            # Pull and Restart
             docker compose pull
             docker compose up -d
-            
-            # Clean up dangling images
             docker image prune -f
+
+  # ==========================================
+  # JOB 2: FRONTEND (NPM BUILD)
+  # ==========================================
+  deploy-frontend:
+    if: github.event_name == 'push' && (contains(github.event.head_commit.modified, 'web-film-frontend/') || contains(github.event.head_commit.added, 'web-film-frontend/'))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: ${{ env.WORKING_DIR_FRONTEND }}/package-lock.json
+
+      - name: Build Frontend
+        run: |
+          cd ${{ env.WORKING_DIR_FRONTEND }}
+          npm install
+          npm run build
+        env:
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+
+      - name: Prepare Frontend Directory on VPS
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            sudo mkdir -p /var/www/cinestream/frontend
+            sudo chown -R ${{ secrets.SSH_USER }}:${{ secrets.SSH_USER }} /var/www/cinestream/frontend
+
+      - name: Push Dist to VPS
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "${{ env.WORKING_DIR_FRONTEND }}/dist/*"
+          target: "/var/www/cinestream/frontend"
+          strip_components: 2
+
+  # ==========================================
+  # JOB 3: ANDROID (GRADLE BUILD)
+  # ==========================================
+  build-android:
+    if: github.event_name == 'push' && (contains(github.event.head_commit.modified, 'web-film-android/') || contains(github.event.head_commit.added, 'web-film-android/'))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Build APK
+        run: |
+          cd ${{ env.WORKING_DIR_ANDROID }}
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cinestream-app-debug
+          path: ${{ env.WORKING_DIR_ANDROID }}/app/build/outputs/apk/debug/app-debug.apk

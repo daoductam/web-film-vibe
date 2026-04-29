@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { ThumbsUp, Reply, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
-import { Comment } from '../../types';
+import type { Comment } from '../../types';
 import { socialService } from '../../services/social.service';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { useToast } from '../common/Toast';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -48,6 +49,8 @@ const CommentItem: React.FC<CommentItemProps> = ({
         }
     };
 
+    const { showToast } = useToast();
+
     const handleReply = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!replyContent.trim() || isSubmitting) return;
@@ -64,9 +67,11 @@ const CommentItem: React.FC<CommentItemProps> = ({
                 onReplySuccess(comment, response.data);
                 setReplyContent('');
                 setIsReplying(false);
+                showToast('Đã đăng phản hồi!', 'success');
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to reply:', error);
+            showToast(error.response?.status === 401 ? 'Vui lòng đăng nhập để phản hồi!' : 'Không thể gửi phản hồi', 'error');
         } finally {
             setIsSubmitting(false);
         }
@@ -78,9 +83,11 @@ const CommentItem: React.FC<CommentItemProps> = ({
             const response = await socialService.deleteComment(comment.id);
             if (response.success) {
                 onDeleteSuccess(comment.id);
+                showToast('Đã xóa bình luận', 'info');
             }
         } catch (error) {
             console.error('Failed to delete:', error);
+            showToast('Không thể xóa bình luận', 'error');
         }
     };
 

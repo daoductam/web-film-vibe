@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { MessageSquare, Send } from 'lucide-react';
-import { Comment } from '../../types';
+import type { Comment } from '../../types';
 import { socialService } from '../../services/social.service';
 import CommentItem from './CommentItem';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useToast } from '../common/Toast';
 
 interface CommentSectionProps {
     movieSlug: string;
@@ -41,6 +42,8 @@ const CommentSection: React.FC<CommentSectionProps> = ({ movieSlug, episodeSlug 
         }
     };
 
+    const { showToast } = useToast();
+
     const handleAddComment = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newCommentContent.trim() || isSubmitting) return;
@@ -56,9 +59,11 @@ const CommentSection: React.FC<CommentSectionProps> = ({ movieSlug, episodeSlug 
                 setComments(prev => [response.data, ...prev]);
                 setNewCommentContent('');
                 setTotalComments(prev => prev + 1);
+                showToast('Đã đăng bình luận!', 'success');
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to add comment:', error);
+            showToast(error.response?.status === 401 ? 'Vui lòng đăng nhập để bình luận!' : 'Không thể gửi bình luận', 'error');
         } finally {
             setIsSubmitting(false);
         }

@@ -1,5 +1,5 @@
 import api from './api';
-import { ApiResponse, Comment, Rating, PageResponse } from '../types';
+import type { ApiResponse, Comment, Rating, PageResponse } from '../types';
 
 export const socialService = {
     // Comments

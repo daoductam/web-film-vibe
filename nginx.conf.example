@@ -1,0 +1,24 @@
+server {
+    listen 80;
+    server_name your_domain_or_ip;
+
+    root /var/www/cinestream/frontend;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Proxy API requests to backend if needed (optional if frontend calls direct IP)
+    # location /api/v1 {
+    #     proxy_pass http://localhost:8081/api/v1;
+    #     proxy_set_header Host $host;
+    #     proxy_set_header X-Real-IP $remote_addr;
+    # }
+
+    # Caching for static assets
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|otf)$ {
+        expires 30d;
+        add_header Cache-Control "public, no-transform";
+    }
+}
