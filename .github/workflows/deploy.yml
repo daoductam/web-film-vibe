@@ -8,6 +8,7 @@ on:
       - 'web-film-frontend/**'
       - 'web-film-android/**'
       - '.github/workflows/deploy.yml'
+  workflow_dispatch: # Cho phép nhấn nút chạy thủ công trên GitHub
 
 env:
   REGISTRY: ghcr.io
@@ -21,7 +22,14 @@ jobs:
   # JOB 1: BACKEND (DOCKER)
   # ==========================================
   deploy-backend:
-    if: github.event_name == 'push' && (contains(github.event.head_commit.modified, 'web-film-backend/') || contains(github.event.head_commit.added, 'web-film-backend/'))
+    # Chạy nếu: 
+    # 1. Chạy thủ công (workflow_dispatch)
+    # 2. Có sửa code backend
+    # 3. Có sửa file cấu hình CI/CD
+    if: |
+      github.event_name == 'workflow_dispatch' || 
+      contains(github.event.head_commit.modified, 'web-film-backend/') ||
+      contains(github.event.head_commit.modified, '.github/workflows/deploy.yml')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -77,7 +85,10 @@ jobs:
   # JOB 2: FRONTEND (NPM BUILD)
   # ==========================================
   deploy-frontend:
-    if: github.event_name == 'push' && (contains(github.event.head_commit.modified, 'web-film-frontend/') || contains(github.event.head_commit.added, 'web-film-frontend/'))
+    if: |
+      github.event_name == 'workflow_dispatch' || 
+      contains(github.event.head_commit.modified, 'web-film-frontend/') ||
+      contains(github.event.head_commit.modified, '.github/workflows/deploy.yml')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -122,7 +133,10 @@ jobs:
   # JOB 3: ANDROID (GRADLE BUILD)
   # ==========================================
   build-android:
-    if: github.event_name == 'push' && (contains(github.event.head_commit.modified, 'web-film-android/') || contains(github.event.head_commit.added, 'web-film-android/'))
+    if: |
+      github.event_name == 'workflow_dispatch' || 
+      contains(github.event.head_commit.modified, 'web-film-android/') ||
+      contains(github.event.head_commit.modified, '.github/workflows/deploy.yml')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
