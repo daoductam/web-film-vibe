@@ -2,7 +2,7 @@ name: CI/CD CineStream Multi-Platform
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "dev" ]
     paths:
       - 'web-film-backend/**'
       - 'web-film-frontend/**'
