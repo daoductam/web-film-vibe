@@ -1,5 +1,5 @@
 import api from './api';
-import type { ApiResponse, AuthResponse, UserProfile } from '../types';
+import type { ApiResponse, AuthResponse } from '../types';
 
 export interface LoginRequest {
     username: string;
