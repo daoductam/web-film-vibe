@@ -12,7 +12,10 @@ import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Service
 @Slf4j
@@ -23,6 +26,11 @@ public class JwtService {
 
     @Value("${app.security.jwt-expiration-ms}")
     private long jwtExpirationMs;
+
+    @Autowired
+    private StringRedisTemplate redisTemplate;
+
+    private static final String BLACKLIST_PREFIX = "jwt:blacklist:";
 
     /**
      * Generate JWT token for a user.
@@ -83,12 +91,33 @@ public class JwtService {
      */
     public boolean isTokenValid(String token, UserDetails userDetails) {
         try {
+            if (isTokenBlacklisted(token)) {
+                return false;
+            }
             final String username = extractUsername(token);
             return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
         } catch (Exception e) {
             log.error("JWT validation error: {}", e.getMessage());
             return false;
         }
+    }
+
+    /**
+     * Blacklist a token (logout)
+     */
+    public void blacklistToken(String token) {
+        Date expirationDate = extractExpiration(token);
+        long ttlMs = expirationDate.getTime() - System.currentTimeMillis();
+        if (ttlMs > 0) {
+            redisTemplate.opsForValue().set(BLACKLIST_PREFIX + token, "blacklisted", ttlMs, TimeUnit.MILLISECONDS);
+        }
+    }
+
+    /**
+     * Check if a token is blacklisted
+     */
+    public boolean isTokenBlacklisted(String token) {
+        return Boolean.TRUE.equals(redisTemplate.hasKey(BLACKLIST_PREFIX + token));
     }
 
     /**

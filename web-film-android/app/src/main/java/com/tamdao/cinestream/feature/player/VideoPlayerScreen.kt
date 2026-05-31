@@ -9,6 +9,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.PictureInPicture
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -56,8 +57,17 @@ fun VideoPlayerScreen(
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = NeonCyan)
             }
             is PlayerUiState.Success -> {
+                // Kiểm tra xem có bản offline không
+                val offlineEpisode by viewModel.offlineEpisode.collectAsState()
+                val videoUrl = if (offlineEpisode?.downloadStatus == "COMPLETED" && !offlineEpisode?.localVideoPath.isNullOrEmpty()) {
+                    offlineEpisode?.localVideoPath ?: ""
+                } else {
+                    state.episode.linkM3u8 ?: ""
+                }
+
                 ExoPlayerView(
-                    url = state.episode.linkM3u8 ?: "",
+                    url = videoUrl,
+                    dataSourceFactory = viewModel.downloadManagerWrapper.createCacheDataSourceFactory(),
                     onBackClick = onBackClick,
                     onNextEpisode = {
                         val currentIndex = state.allEpisodes.indexOf(state.episode)
@@ -89,26 +99,31 @@ fun VideoPlayerScreen(
 @Composable
 fun ExoPlayerView(
     url: String,
+    dataSourceFactory: androidx.media3.datasource.DataSource.Factory,
     onBackClick: () -> Unit,
     onNextEpisode: () -> Unit,
     onDispose: (Long, Long) -> Unit
 ) {
     val context = LocalContext.current
     val exoPlayer = remember {
-        ExoPlayer.Builder(context).build().apply {
-            val mediaItem = MediaItem.fromUri(url)
-            setMediaItem(mediaItem)
-            prepare()
-            playWhenReady = true
-            
-            addListener(object : Player.Listener {
-                override fun onPlaybackStateChanged(state: Int) {
-                    if (state == Player.STATE_ENDED) {
-                        onNextEpisode()
+        ExoPlayer.Builder(context)
+            .setMediaSourceFactory(
+                androidx.media3.exoplayer.source.DefaultMediaSourceFactory(dataSourceFactory)
+            )
+            .build().apply {
+                val mediaItem = MediaItem.fromUri(url)
+                setMediaItem(mediaItem)
+                prepare()
+                playWhenReady = true
+                
+                addListener(object : Player.Listener {
+                    override fun onPlaybackStateChanged(state: Int) {
+                        if (state == Player.STATE_ENDED) {
+                            onNextEpisode()
+                        }
                     }
-                }
-            })
-        }
+                })
+            }
     }
 
     LaunchedEffect(url) {
@@ -140,11 +155,38 @@ fun ExoPlayerView(
         )
 
         // Overlay Nút Quay lại
-        IconButton(
-            onClick = onBackClick,
-            modifier = Modifier.padding(16.dp).align(Alignment.TopStart)
-        ) {
-            Icon(Icons.Default.ArrowBack, contentDescription = null, tint = Color.White)
+        var isInPipMode by remember { mutableStateOf(false) }
+        val activity = context as? Activity
+        
+        DisposableEffect(context) {
+            val listener = { mode: Boolean -> isInPipMode = mode }
+            // Lưu ý: Trong thực tế bạn cần một cách để lắng nghe thay đổi PiP từ Activity
+            onDispose {}
+        }
+
+        if (!isInPipMode) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(16.dp).align(Alignment.TopStart),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onBackClick) {
+                    Icon(Icons.Default.ArrowBack, contentDescription = null, tint = Color.White)
+                }
+                
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    IconButton(onClick = {
+                        val params = android.app.PictureInPictureParams.Builder().build()
+                        activity?.enterPictureInPictureMode(params)
+                    }) {
+                        Icon(
+                            imageVector = androidx.compose.material.icons.Icons.Default.PictureInPicture, 
+                            contentDescription = "PiP", 
+                            tint = Color.White
+                        )
+                    }
+                }
+            }
         }
     }
 }

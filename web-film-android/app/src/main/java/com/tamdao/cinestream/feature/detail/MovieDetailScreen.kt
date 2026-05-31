@@ -9,8 +9,18 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.foundation.clickable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.BottomSheetDefaults
+import com.tamdao.cinestream.ui.theme.SurfaceDark
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -44,6 +54,10 @@ fun MovieDetailScreen(
     val isFavorite by viewModel.isFavorite.collectAsState()
     val comments by viewModel.comments.collectAsState()
     val userRating by viewModel.userRating.collectAsState()
+    val offlineEpisodes by viewModel.offlineEpisodes.collectAsState()
+    var showDownloadSheet by remember { mutableStateOf(false) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var showOfflineDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(slug) {
         viewModel.loadMovieDetail(slug)
@@ -66,6 +80,13 @@ fun MovieDetailScreen(
                                 imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                                 contentDescription = "Favorite",
                                 tint = if (isFavorite) NeonCyan else Color.White
+                            )
+                        }
+                        IconButton(onClick = { showDownloadSheet = true }) {
+                            Icon(
+                                imageVector = androidx.compose.material.icons.Icons.Default.Download,
+                                contentDescription = "Download",
+                                tint = Color.White
                             )
                         }
                     }
@@ -102,6 +123,8 @@ fun MovieDetailScreen(
                                 Text(text = movie.title, color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Black)
                                 
                                 Spacer(modifier = Modifier.height(8.dp))
+
+                                Spacer(modifier = Modifier.height(8.dp))
                                 
                                 // Rating Bar
                                 StarRatingBar(
@@ -131,8 +154,13 @@ fun MovieDetailScreen(
                                         rowEps.forEach { ep ->
                                             Button(
                                                 onClick = { 
-                                                    onPlayClick(movie.slug, ep.slug)
-                                                    // No longer need to reload comments by episode, showing all
+                                                    val isOnline = com.tamdao.cinestream.core.util.NetworkUtils.isNetworkAvailable(context)
+                                                    val isDownloaded = offlineEpisodes.any { it.episodeSlug == ep.slug && it.downloadStatus == "COMPLETED" }
+                                                    if (isOnline || isDownloaded) {
+                                                        onPlayClick(movie.slug, ep.slug)
+                                                    } else {
+                                                        showOfflineDialog = true
+                                                    }
                                                 },
                                                 modifier = Modifier.weight(1f),
                                                 colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.1f)),
@@ -176,5 +204,137 @@ fun MovieDetailScreen(
                 }
             }
         }
+    }
+
+    if (showDownloadSheet && uiState is MovieDetailUiState.Success) {
+        val movie = (uiState as MovieDetailUiState.Success).movie
+        val episodes = movie.servers.firstOrNull()?.episodes ?: emptyList()
+        val sheetState = rememberModalBottomSheetState()
+        
+        ModalBottomSheet(
+            onDismissRequest = { showDownloadSheet = false },
+            sheetState = sheetState,
+            containerColor = SurfaceDark,
+            dragHandle = { BottomSheetDefaults.DragHandle(color = Color.White.copy(alpha = 0.3f)) }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .navigationBarsPadding()
+            ) {
+                Text(
+                    text = "Tải tập phim",
+                    color = Color.White,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                
+                if (episodes.isEmpty()) {
+                    Text(
+                        text = "Không có tập phim nào để tải.",
+                        color = Color.Gray,
+                        modifier = Modifier.padding(vertical = 16.dp)
+                    )
+                } else {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxWidth().heightIn(max = 400.dp)
+                    ) {
+                        items(episodes.size) { index ->
+                            val ep = episodes[index]
+                            val offlineEp = offlineEpisodes.find { it.episodeSlug == ep.slug }
+                            
+                            val isDownloaded = offlineEp?.downloadStatus == "COMPLETED"
+                            val isDownloading = offlineEp?.downloadStatus == "DOWNLOADING"
+                            val isFailed = offlineEp?.downloadStatus == "FAILED"
+                            
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(
+                                        color = if (isDownloaded) NeonCyan.copy(alpha = 0.1f) else Color.White.copy(alpha = 0.05f),
+                                        shape = RoundedCornerShape(12.dp)
+                                    )
+                                    .clickable(enabled = !isDownloaded && !isDownloading) {
+                                        viewModel.downloadEpisode(movie, ep)
+                                    }
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = ep.name,
+                                        color = if (isDownloaded) NeonCyan else Color.White,
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 16.sp
+                                    )
+                                    if (isDownloading) {
+                                        Text(
+                                            text = "Đang tải: ${offlineEp?.progress?.toInt() ?: 0}%",
+                                            color = NeonCyan.copy(alpha = 0.8f),
+                                            fontSize = 12.sp
+                                        )
+                                    } else if (isDownloaded) {
+                                        Text(
+                                            text = "Đã tải xong",
+                                            color = NeonCyan,
+                                            fontSize = 12.sp
+                                        )
+                                    } else if (isFailed) {
+                                        Text(
+                                            text = "Tải thất bại. Nhấn để thử lại.",
+                                            color = Color.Red,
+                                            fontSize = 12.sp
+                                        )
+                                    }
+                                }
+                                
+                                if (isDownloading) {
+                                    CircularProgressIndicator(
+                                        progress = { (offlineEp?.progress ?: 0f) / 100f },
+                                        modifier = Modifier.size(24.dp),
+                                        color = NeonCyan,
+                                        trackColor = Color.White.copy(alpha = 0.2f),
+                                        strokeWidth = 3.dp
+                                    )
+                                } else if (isDownloaded) {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = "Downloaded",
+                                        tint = NeonCyan,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = Icons.Default.Download,
+                                        contentDescription = "Download",
+                                        tint = Color.White.copy(alpha = 0.6f),
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+        }
+    }
+
+    if (showOfflineDialog) {
+        AlertDialog(
+            onDismissRequest = { showOfflineDialog = false },
+            title = { Text("Không có kết nối mạng", color = Color.White, fontWeight = FontWeight.Bold) },
+            text = { Text("Tập phim này chưa được tải xuống. Vui lòng kết nối mạng để xem tập phim này.", color = Color.White.copy(alpha = 0.8f)) },
+            confirmButton = {
+                TextButton(onClick = { showOfflineDialog = false }) {
+                    Text("Đóng", color = NeonCyan)
+                }
+            },
+            containerColor = SurfaceDark
+        )
     }
 }

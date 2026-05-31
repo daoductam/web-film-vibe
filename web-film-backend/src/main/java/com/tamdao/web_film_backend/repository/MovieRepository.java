@@ -10,9 +10,16 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
+import org.springframework.data.jpa.repository.EntityGraph;
+
 @Repository
 public interface MovieRepository extends JpaRepository<Movie, Long> {
 
+    @EntityGraph(attributePaths = {"categories", "countries", "episodes", "episodes.serverData"})
+    @Override
+    Optional<Movie> findById(Long id);
+
+    @EntityGraph(attributePaths = {"categories", "countries", "episodes", "episodes.serverData"})
     Optional<Movie> findBySlug(String slug);
 
     Optional<Movie> findByTmdbId(String tmdbId);
@@ -22,8 +29,10 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
     @Query("SELECT m FROM Movie m WHERE m.originTitle = :originTitle AND m.year = :year")
     Optional<Movie> findByOriginTitleAndYear(@Param("originTitle") String originTitle, @Param("year") Integer year);
 
+    @EntityGraph(attributePaths = {"categories", "countries"})
     Page<Movie> findAllByOrderByUpdatedAtDesc(Pageable pageable);
 
+    @EntityGraph(attributePaths = {"categories", "countries"})
     Page<Movie> findAllByOrderByViewCountDesc(Pageable pageable);
 
     @Query("SELECT m FROM Movie m JOIN m.categories c WHERE c.slug = :categorySlug")

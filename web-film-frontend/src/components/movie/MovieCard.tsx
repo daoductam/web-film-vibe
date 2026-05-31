@@ -52,6 +52,7 @@ export const MovieCard = ({ movie }: MovieCardProps) => {
                 <img 
                     src={movie.posterUrl || movie.thumbUrl} 
                     alt={movie.title} 
+                    loading="lazy"
                     className="w-full h-full object-cover poster-image transition-all duration-300 rounded-t-2xl" 
                 />
                 
@@ -59,6 +60,7 @@ export const MovieCard = ({ movie }: MovieCardProps) => {
                     <img 
                         src={movie.posterUrl || movie.thumbUrl} 
                         alt="Preview" 
+                        loading="lazy"
                         className="w-full h-full object-cover opacity-60" 
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />

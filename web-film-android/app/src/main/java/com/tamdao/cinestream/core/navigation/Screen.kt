@@ -35,6 +35,7 @@ sealed class Screen(
     object Register : Screen("register")
     object EditProfile : Screen("edit_profile")
     object ChangePassword : Screen("change_password")
+    object DownloadedMovies : Screen("downloaded_movies")
 }
 
 val bottomNavItems = listOf(

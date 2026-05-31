@@ -11,6 +11,7 @@ import CommentSection from '../../components/movie/CommentSection';
 import { useAuthStore } from '../../store/authStore';
 import { personalizationService } from '../../services/personalization.service';
 import { useToast } from '../../components/common/Toast';
+import { MovieDetailSkeleton } from '../../components/movie/MovieDetailSkeleton';
 
 export const MovieDetailPage = () => {
     const { slug } = useParams<{ slug: string }>();
@@ -84,11 +85,7 @@ export const MovieDetailPage = () => {
     };
 
     if (isLoading) {
-         return (
-            <div className="min-h-screen bg-obsidian flex items-center justify-center">
-                 <div className="w-12 h-12 border-4 border-neon border-t-transparent rounded-full animate-spin"></div>
-            </div>
-        );
+         return <MovieDetailSkeleton />;
     }
 
     if (!movie) return <div className="text-white text-center pt-40">Film not found</div>;

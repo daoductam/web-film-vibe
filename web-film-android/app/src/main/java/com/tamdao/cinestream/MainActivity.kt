@@ -92,7 +92,17 @@ class MainActivity : ComponentActivity() {
                                 onLoginClick = { navController.navigate(Screen.Login.route) },
                                 onRegisterClick = { navController.navigate(Screen.Register.route) },
                                 onEditProfileClick = { navController.navigate(Screen.EditProfile.route) },
-                                onChangePasswordClick = { navController.navigate(Screen.ChangePassword.route) }
+                                onChangePasswordClick = { navController.navigate(Screen.ChangePassword.route) },
+                                onDownloadedMoviesClick = { navController.navigate(Screen.DownloadedMovies.route) }
+                            )
+                        }
+
+                        composable(Screen.DownloadedMovies.route) {
+                            DownloadedMoviesScreen(
+                                onBackClick = { navController.popBackStack() },
+                                onPlayClick = { movieSlug, epSlug ->
+                                    navController.navigate(Screen.Player.createRoute(movieSlug, epSlug))
+                                }
                             )
                         }
 
@@ -189,6 +199,18 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
+//    override fun onUserLeaveHint() {
+//        super.onUserLeaveHint()
+//        // Kiểm tra nếu đang ở màn hình trình phát thì có thể vào PiP
+//        // Lưu ý: Việc kiểm tra chính xác navigation state có thể phức tạp,
+//        // ở đây ta có thể phát ra một tín hiệu hoặc để VideoPlayerScreen tự xử lý.
+//        // Một cách đơn giản là gọi enterPictureInPictureMode() nếu SDK >= 26
+//        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+//            // Chỉ vào PiP nếu đang trong quá trình xem phim (logic này thường được điều khiển bởi PlayerViewModel)
+//        }
+//    }
+
 
 @androidx.compose.runtime.Composable
 fun PlaceholderScreen(title: String, subtitle: String) {

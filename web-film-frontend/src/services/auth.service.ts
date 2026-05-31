@@ -19,8 +19,8 @@ export const authService = {
         return response.data.data;
     },
     
-    register: async (request: RegisterRequest): Promise<UserProfile> => {
-        const response = await api.post<ApiResponse<UserProfile>>('/auth/register', request);
+    register: async (request: RegisterRequest): Promise<AuthResponse> => {
+        const response = await api.post<ApiResponse<AuthResponse>>('/auth/register', request);
         return response.data.data;
     }
 };

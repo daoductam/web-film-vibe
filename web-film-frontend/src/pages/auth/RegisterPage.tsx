@@ -11,8 +11,8 @@ export const RegisterPage = () => {
     const [password, setPassword] = useState('');
     const navigate = useNavigate();
 
+    const { setAuth, token } = useAuthStore();
     const { showToast } = useToast();
-    const { token } = useAuthStore();
 
     // Redirect if already logged in
     useEffect(() => {
@@ -24,9 +24,10 @@ export const RegisterPage = () => {
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await authService.register({ username: email.split('@')[0], email, password, fullName: name });
-            showToast('Đăng ký tài khoản thành công! Hãy đăng nhập để tiếp tục.', 'success');
-            navigate('/login');
+            const data = await authService.register({ username: email.split('@')[0], email, password, fullName: name });
+            setAuth(data.accessToken, data.refreshToken, data.user);
+            showToast('Đăng ký tài khoản thành công!', 'success');
+            navigate('/');
         } catch (error: any) {
             console.error('Registration failed:', error);
             showToast(error.response?.data?.message || 'Đăng ký thất bại. Email có thể đã tồn tại!', 'error');

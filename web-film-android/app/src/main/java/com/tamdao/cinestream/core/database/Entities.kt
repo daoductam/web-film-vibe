@@ -37,3 +37,32 @@ data class FavoriteEntity(
     val year: Int?,
     val createdAt: Long = System.currentTimeMillis()
 )
+
+@Entity(tableName = "offline_movies")
+data class OfflineMovieEntity(
+    @PrimaryKey val slug: String,
+    val id: Long,
+    val title: String,
+    val thumbUrl: String?,
+    val posterUrl: String?,
+    val description: String?,
+    val quality: String?,
+    val duration: String?,
+    val director: String?,
+    val actors: String?,
+    val serversJson: String, // Full servers and episodes info
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+@Entity(tableName = "offline_episodes")
+data class OfflineEpisodeEntity(
+    @PrimaryKey val episodeSlug: String,
+    val movieSlug: String,
+    val episodeName: String,
+    val videoUrl: String,
+    val localVideoPath: String? = null,
+    val downloadStatus: String = "NONE", // NONE, DOWNLOADING, COMPLETED, FAILED
+    val progress: Float = 0f,
+    val createdAt: Long = System.currentTimeMillis()
+)
+

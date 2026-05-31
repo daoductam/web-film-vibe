@@ -170,6 +170,127 @@ class MovieRepository @Inject constructor(
         }
     }
 
+    // Offline Mode
+    fun getAllOfflineMovieEntities(): Flow<List<com.tamdao.cinestream.core.database.OfflineMovieEntity>> {
+        return movieDao.getAllOfflineMovies()
+    }
+
+    fun getAllOfflineMovies(): Flow<List<MovieDto>> = movieDao.getAllOfflineMovies().map { list ->
+        list.map { it.toDto() }
+    }
+
+    suspend fun getOfflineMovie(slug: String): com.tamdao.cinestream.core.database.OfflineMovieEntity? {
+        return movieDao.getOfflineMovie(slug)
+    }
+
+    suspend fun getOfflineEpisode(episodeSlug: String): com.tamdao.cinestream.core.database.OfflineEpisodeEntity? {
+        return movieDao.getOfflineEpisode(episodeSlug)
+    }
+
+    suspend fun saveMovieOffline(movie: MovieDetailDto) {
+        val gson = com.google.gson.Gson()
+        val entity = com.tamdao.cinestream.core.database.OfflineMovieEntity(
+            slug = movie.slug,
+            id = movie.id,
+            title = movie.title,
+            thumbUrl = movie.thumbUrl,
+            posterUrl = movie.posterUrl,
+            description = movie.description,
+            quality = movie.quality,
+            duration = movie.duration,
+            director = movie.director,
+            actors = movie.actors,
+            serversJson = gson.toJson(movie.servers)
+        )
+        movieDao.insertOfflineMovie(entity)
+    }
+
+    suspend fun getOfflineMovieDetail(slug: String): MovieDetailDto? {
+        val entity = movieDao.getOfflineMovie(slug) ?: return null
+        val gson = com.google.gson.Gson()
+        val typeToken = object : com.google.gson.reflect.TypeToken<List<com.tamdao.cinestream.data.model.ServerEpisodeGroupDto>>() {}.type
+        val servers: List<com.tamdao.cinestream.data.model.ServerEpisodeGroupDto> = try {
+            gson.fromJson(entity.serversJson, typeToken)
+        } catch (e: Exception) {
+            emptyList()
+        }
+        return MovieDetailDto(
+            id = entity.id,
+            title = entity.title,
+            originTitle = entity.title,
+            slug = entity.slug,
+            thumbUrl = entity.thumbUrl ?: "",
+            posterUrl = entity.posterUrl ?: "",
+            year = 0,
+            description = entity.description,
+            status = null,
+            type = "OFFLINE",
+            viewCount = 0,
+            totalEpisodes = servers.flatMap { it.episodes }.size,
+            currentEpisode = null,
+            quality = entity.quality,
+            language = null,
+            duration = entity.duration,
+            director = entity.director,
+            actors = entity.actors,
+            categories = emptyList(),
+            countries = emptyList(),
+            servers = servers,
+            averageRating = null,
+            ratingCount = null
+        )
+    }
+
+
+    fun getOfflineEpisodesByMovie(movieSlug: String): Flow<List<com.tamdao.cinestream.core.database.OfflineEpisodeEntity>> {
+        return movieDao.getOfflineEpisodesByMovie(movieSlug)
+    }
+
+    fun getAllOfflineEpisodes(): Flow<List<com.tamdao.cinestream.core.database.OfflineEpisodeEntity>> {
+        return movieDao.getAllOfflineEpisodes()
+    }
+
+    fun getOfflineEpisodesFlow(): Flow<List<com.tamdao.cinestream.core.database.OfflineEpisodeEntity>> {
+        return movieDao.getOfflineEpisodesFlow()
+    }
+
+    suspend fun saveEpisodeOffline(episodeSlug: String, movieSlug: String, episodeName: String, videoUrl: String) {
+        val entity = com.tamdao.cinestream.core.database.OfflineEpisodeEntity(
+            episodeSlug = episodeSlug,
+            movieSlug = movieSlug,
+            episodeName = episodeName,
+            videoUrl = videoUrl,
+            downloadStatus = "DOWNLOADING",
+            progress = 0f
+        )
+        movieDao.insertOfflineEpisode(entity)
+    }
+
+    suspend fun updateEpisodeDownloadStatus(episodeSlug: String, status: String, path: String?, progress: Float) {
+        movieDao.updateEpisodeDownloadStatus(episodeSlug, status, path, progress)
+    }
+
+    suspend fun deleteOfflineEpisode(episodeSlug: String) {
+        movieDao.deleteOfflineEpisode(episodeSlug)
+    }
+
+    suspend fun deleteOfflineMovieAndEpisodes(movieSlug: String) {
+        movieDao.deleteOfflineMovie(movieSlug)
+        movieDao.deleteOfflineEpisodesByMovie(movieSlug)
+    }
+
+
+    private fun com.tamdao.cinestream.core.database.OfflineMovieEntity.toDto() = MovieDto(
+        id = id,
+        title = title,
+        slug = slug,
+        thumbUrl = thumbUrl,
+        posterUrl = posterUrl,
+        quality = quality,
+        year = 0, // Not stored in offline entity for now
+        type = "OFFLINE"
+    )
+
     private fun MovieDto.toFavoriteEntity() = FavoriteEntity(
         slug = slug,
         title = title,

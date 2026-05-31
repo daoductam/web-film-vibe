@@ -8,12 +8,15 @@ import com.tamdao.cinestream.data.repository.SocialRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import com.tamdao.cinestream.core.download.DownloadManagerWrapper
+import com.tamdao.cinestream.core.database.OfflineEpisodeEntity
 import javax.inject.Inject
 
 @HiltViewModel
 class MovieDetailViewModel @Inject constructor(
     private val repository: MovieRepository,
-    private val socialRepository: SocialRepository
+    private val socialRepository: SocialRepository,
+    private val downloadManagerWrapper: DownloadManagerWrapper
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<MovieDetailUiState>(MovieDetailUiState.Loading)
@@ -28,9 +31,19 @@ class MovieDetailViewModel @Inject constructor(
     private val _userRating = MutableStateFlow<Int?>(null)
     val userRating: StateFlow<Int?> = _userRating.asStateFlow()
 
+    private val _offlineEpisodes = MutableStateFlow<List<OfflineEpisodeEntity>>(emptyList())
+    val offlineEpisodes: StateFlow<List<OfflineEpisodeEntity>> = _offlineEpisodes.asStateFlow()
+
     fun loadMovieDetail(slug: String) {
         viewModelScope.launch {
             _uiState.value = MovieDetailUiState.Loading
+            
+            // Observe offline episodes for this movie
+            launch {
+                repository.getOfflineEpisodesByMovie(slug).collectLatest { eps ->
+                    _offlineEpisodes.value = eps
+                }
+            }
             
             launch {
                 try {
@@ -44,12 +57,26 @@ class MovieDetailViewModel @Inject constructor(
                 val response = repository.getMovieDetail(slug)
                 if (response.success && response.data != null) {
                     _uiState.value = MovieDetailUiState.Success(response.data)
+                    // Cập nhật/đồng bộ thông tin chi tiết phim vào Room DB
+                    repository.saveMovieOffline(response.data)
                     loadUserRating(slug)
                 } else {
-                    _uiState.value = MovieDetailUiState.Error(response.message ?: "Unknown error")
+                    // Thử tải từ DB local lưu trữ ngoại tuyến
+                    val localDetail = repository.getOfflineMovieDetail(slug)
+                    if (localDetail != null) {
+                        _uiState.value = MovieDetailUiState.Success(localDetail)
+                    } else {
+                        _uiState.value = MovieDetailUiState.Error(response.message ?: "Unknown error")
+                    }
                 }
             } catch (e: Exception) {
-                _uiState.value = MovieDetailUiState.Error(e.message ?: "Connection failed")
+                // Thử tải từ DB local lưu trữ ngoại tuyến
+                val localDetail = repository.getOfflineMovieDetail(slug)
+                if (localDetail != null) {
+                    _uiState.value = MovieDetailUiState.Success(localDetail)
+                } else {
+                    _uiState.value = MovieDetailUiState.Error(e.message ?: "Connection failed")
+                }
             }
         }
     }
@@ -127,6 +154,31 @@ class MovieDetailViewModel @Inject constructor(
                 viewCount = movie.viewCount
             )
             repository.toggleFavorite(dto)
+        }
+    }
+
+    fun downloadEpisode(movie: MovieDetailDto, episode: EpisodeDto) {
+        viewModelScope.launch {
+            try {
+                // 1. Lưu metadata vào DB offline nếu chưa có
+                repository.saveMovieOffline(movie)
+                
+                // 2. Lưu thông tin tập phim offline
+                repository.saveEpisodeOffline(
+                    episodeSlug = episode.slug,
+                    movieSlug = movie.slug,
+                    episodeName = episode.name,
+                    videoUrl = episode.linkM3u8 ?: ""
+                )
+                
+                // 3. Gọi DownloadManager của Media3 qua Wrapper
+                episode.linkM3u8?.let { videoUrl ->
+                    downloadManagerWrapper.startDownload(episode.slug, videoUrl)
+                    println("Bắt đầu tải tập phim: ${episode.name} của ${movie.title} từ $videoUrl")
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 }

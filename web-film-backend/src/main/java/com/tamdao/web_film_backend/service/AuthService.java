@@ -115,6 +115,17 @@ public class AuthService {
         return buildAuthResponse(user, newAccessToken, newRefreshToken);
     }
 
+    /**
+     * Logout and blacklist token.
+     */
+    public void logout(String authHeader) {
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            jwtService.blacklistToken(token);
+            log.info("Token blacklisted for logout");
+        }
+    }
+
     private AuthResponse buildAuthResponse(User user, String accessToken, String refreshToken) {
         return AuthResponse.builder()
                 .accessToken(accessToken)

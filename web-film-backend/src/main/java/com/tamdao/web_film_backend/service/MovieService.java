@@ -20,6 +20,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.Cacheable;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -40,6 +41,7 @@ public class MovieService {
     /**
      * Get paginated list of latest movies.
      */
+    @Cacheable(value = "latestMovies", key = "#page + '-' + #size")
     @Transactional(readOnly = true)
     public Page<MovieResponse> getLatestMovies(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
@@ -50,6 +52,7 @@ public class MovieService {
     /**
      * Get paginated list of popular movies (by view count).
      */
+    @Cacheable(value = "popularMovies", key = "#page + '-' + #size")
     @Transactional(readOnly = true)
     public Page<MovieResponse> getPopularMovies(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
@@ -60,6 +63,7 @@ public class MovieService {
     /**
      * Get movie detail by slug with episodes grouped by server.
      */
+    @Cacheable(value = "movieDetail", key = "#slug")
     @Transactional(readOnly = true)
     public MovieDetailResponse getMovieDetail(String slug) {
         Movie movie = movieRepository.findBySlug(slug)

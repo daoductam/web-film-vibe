@@ -24,7 +24,7 @@ export const LoginPage = () => {
         e.preventDefault();
         try {
             const data = await authService.login({ username: email, password });
-            setAuth(data.accessToken, data.user);
+            setAuth(data.accessToken, data.refreshToken, data.user);
             showToast('Đăng nhập thành công! Chào mừng bạn trở lại.', 'success');
             navigate('/');
         } catch (error: any) {
