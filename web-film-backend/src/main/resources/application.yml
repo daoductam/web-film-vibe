@@ -93,6 +93,7 @@ springdoc:
 # Bucket4j Rate Limiting Configuration
 bucket4j:
   enabled: true
+  cache-to-use: caffeine
   filters:
     - cache-name: rate-limit-login
       url: /api/v1/auth/login

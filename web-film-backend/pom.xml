@@ -71,6 +71,11 @@
 			<artifactId>bucket4j-spring-boot-starter</artifactId>
 			<version>0.14.0</version>
 		</dependency>
+		<!-- Caffeine Local Cache for Bucket4j -->
+		<dependency>
+			<groupId>com.github.ben-manes.caffeine</groupId>
+			<artifactId>caffeine</artifactId>
+		</dependency>
 
 		<!-- Security -->
 		<dependency>
