@@ -29,8 +29,9 @@ class PlayerViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = PlayerUiState.Loading
             
-            // Check offline episode
-            val localEp = repository.getOfflineEpisode(episodeSlug)
+            // Check offline episode using composite unique ID
+            val uniqueEpisodeSlug = "${movieSlug}_${episodeSlug}"
+            val localEp = repository.getOfflineEpisode(uniqueEpisodeSlug)
             _offlineEpisode.value = localEp
             
             try {

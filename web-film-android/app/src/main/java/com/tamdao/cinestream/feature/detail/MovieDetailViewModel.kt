@@ -163,9 +163,10 @@ class MovieDetailViewModel @Inject constructor(
                 // 1. Lưu metadata vào DB offline nếu chưa có
                 repository.saveMovieOffline(movie)
                 
-                // 2. Lưu thông tin tập phim offline
+                // 2. Lưu thông tin tập phim offline với composite ID để tránh xung đột
+                val uniqueEpisodeSlug = "${movie.slug}_${episode.slug}"
                 repository.saveEpisodeOffline(
-                    episodeSlug = episode.slug,
+                    episodeSlug = uniqueEpisodeSlug,
                     movieSlug = movie.slug,
                     episodeName = episode.name,
                     videoUrl = episode.linkM3u8 ?: ""
@@ -173,7 +174,7 @@ class MovieDetailViewModel @Inject constructor(
                 
                 // 3. Gọi DownloadManager của Media3 qua Wrapper
                 episode.linkM3u8?.let { videoUrl ->
-                    downloadManagerWrapper.startDownload(episode.slug, videoUrl)
+                    downloadManagerWrapper.startDownload(uniqueEpisodeSlug, videoUrl)
                     println("Bắt đầu tải tập phim: ${episode.name} của ${movie.title} từ $videoUrl")
                 }
             } catch (e: Exception) {

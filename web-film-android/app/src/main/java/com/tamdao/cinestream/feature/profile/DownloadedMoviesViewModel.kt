@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -52,7 +53,7 @@ class DownloadedMoviesViewModel @Inject constructor(
             repository.deleteOfflineEpisode(episode.episodeSlug)
             
             // 3. Nếu phim không còn tập nào đã tải, xóa luôn thông tin phim offline
-            val remaining = repository.getOfflineEpisodesByMovie(episode.movieSlug).stateIn(viewModelScope).value
+            val remaining = repository.getOfflineEpisodesByMovie(episode.movieSlug).first()
             if (remaining.isEmpty()) {
                 repository.deleteOfflineMovieAndEpisodes(episode.movieSlug)
             }

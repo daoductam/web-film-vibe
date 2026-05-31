@@ -155,7 +155,7 @@ fun MovieDetailScreen(
                                             Button(
                                                 onClick = { 
                                                     val isOnline = com.tamdao.cinestream.core.util.NetworkUtils.isNetworkAvailable(context)
-                                                    val isDownloaded = offlineEpisodes.any { it.episodeSlug == ep.slug && it.downloadStatus == "COMPLETED" }
+                                                    val isDownloaded = offlineEpisodes.any { it.episodeSlug == "${movie.slug}_${ep.slug}" && it.downloadStatus == "COMPLETED" }
                                                     if (isOnline || isDownloaded) {
                                                         onPlayClick(movie.slug, ep.slug)
                                                     } else {
@@ -244,7 +244,7 @@ fun MovieDetailScreen(
                     ) {
                         items(episodes.size) { index ->
                             val ep = episodes[index]
-                            val offlineEp = offlineEpisodes.find { it.episodeSlug == ep.slug }
+                            val offlineEp = offlineEpisodes.find { it.episodeSlug == "${movie.slug}_${ep.slug}" }
                             
                             val isDownloaded = offlineEp?.downloadStatus == "COMPLETED"
                             val isDownloading = offlineEp?.downloadStatus == "DOWNLOADING"
