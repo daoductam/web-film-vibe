@@ -29,10 +29,8 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
     @Query("SELECT m FROM Movie m WHERE m.originTitle = :originTitle AND m.year = :year")
     Optional<Movie> findByOriginTitleAndYear(@Param("originTitle") String originTitle, @Param("year") Integer year);
 
-    @EntityGraph(attributePaths = {"categories", "countries"})
     Page<Movie> findAllByOrderByUpdatedAtDesc(Pageable pageable);
 
-    @EntityGraph(attributePaths = {"categories", "countries"})
     Page<Movie> findAllByOrderByViewCountDesc(Pageable pageable);
 
     @Query("SELECT m FROM Movie m JOIN m.categories c WHERE c.slug = :categorySlug")
