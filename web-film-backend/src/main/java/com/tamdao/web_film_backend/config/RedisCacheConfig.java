@@ -65,22 +65,54 @@ public class RedisCacheConfig {
     public static class PageImplDeserializer extends JsonDeserializer<PageImpl<?>> {
         @Override
         public PageImpl<?> deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-            ObjectMapper mapper = (ObjectMapper) p.getCodec();
-            JsonNode node = mapper.readTree(p);
+            PageDto dto = p.getCodec().readValue(p, PageDto.class);
+            int size = dto.getSize() > 0 ? dto.getSize() : 10;
+            return new PageImpl<>(
+                    dto.getContent() != null ? dto.getContent() : new ArrayList<>(),
+                    PageRequest.of(dto.getNumber(), size),
+                    dto.getTotalElements()
+            );
+        }
+    }
 
-            List<Object> content = new ArrayList<>();
-            JsonNode contentNode = node.get("content");
-            if (contentNode != null && contentNode.isArray()) {
-                for (JsonNode itemNode : contentNode) {
-                    content.add(mapper.treeToValue(itemNode, Object.class));
-                }
-            }
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
+    @com.fasterxml.jackson.annotation.JsonTypeInfo(use = com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NONE)
+    public static class PageDto {
+        private List<Object> content;
+        private int number;
+        private int size;
+        private long totalElements;
 
-            long totalElements = node.has("totalElements") ? node.get("totalElements").asLong() : content.size();
-            int number = node.has("number") ? node.get("number").asInt() : 0;
-            int size = node.has("size") ? node.get("size").asInt() : Math.max(1, content.size());
+        public List<Object> getContent() {
+            return content;
+        }
 
-            return new PageImpl<>(content, PageRequest.of(number, size), totalElements);
+        public void setContent(List<Object> content) {
+            this.content = content;
+        }
+
+        public int getNumber() {
+            return number;
+        }
+
+        public void setNumber(int number) {
+            this.number = number;
+        }
+
+        public int getSize() {
+            return size;
+        }
+
+        public void setSize(int size) {
+            this.size = size;
+        }
+
+        public long getTotalElements() {
+            return totalElements;
+        }
+
+        public void setTotalElements(long totalElements) {
+            this.totalElements = totalElements;
         }
     }
 }
