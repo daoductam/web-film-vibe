@@ -15,11 +15,11 @@ import org.springframework.data.jpa.repository.EntityGraph;
 @Repository
 public interface MovieRepository extends JpaRepository<Movie, Long> {
 
-    @EntityGraph(attributePaths = {"categories", "countries", "episodes", "episodes.serverData"})
+    @EntityGraph(attributePaths = {"categories", "countries", "episodes"})
     @Override
     Optional<Movie> findById(Long id);
 
-    @EntityGraph(attributePaths = {"categories", "countries", "episodes", "episodes.serverData"})
+    @EntityGraph(attributePaths = {"categories", "countries", "episodes"})
     Optional<Movie> findBySlug(String slug);
 
     Optional<Movie> findByTmdbId(String tmdbId);
