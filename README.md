@@ -42,16 +42,25 @@ graph TD
 
 ---
 
-## 🚀 Các Tính Năng Premium
+## 🚀 Các Tính Năng Hệ Thống
 
-### 🤖 Trò Chuyện & Gợi Ý Phim Từ AI
-Tích hợp trực tiếp **Groq AI SDK** tại backend, cho phép người dùng trò chuyện trực tiếp với trợ lý phim ảnh ảo trên ứng dụng Android để nhận các đề xuất phim thông minh dựa trên sở thích cá nhân.
+### 1. 🔍 Khám Phá Nội Dung & Tìm Kiếm
+- **Tìm Kiếm Toàn Cầu Nâng Cao**: Tìm kiếm phim theo tên trong thời gian thực với độ trễ thấp.
+- **Bộ Lọc Đa Danh Mục**: Lọc động kết hợp nhiều điều kiện cùng lúc (thể loại, quốc gia, năm phát hành).
+- **Crawler Tự Động**: Dịch vụ nền tự động thu thập, đồng bộ và cập nhật dữ liệu phim mới nhất từ các nguồn API bên ngoài.
 
-### 📥 Tải Phim Ngoại Tuyến (Offline Download)
-Ứng dụng Android hỗ trợ tải trực tiếp các tập phim về thiết bị thông qua hệ thống **DownloadManagerWrapper**, cho phép người dùng thưởng thức phim chất lượng cao bất kể lúc nào mà không cần kết nối Internet.
+### 2. 👤 Trải Nghiệm Người Dùng (UX/UI)
+- **Đăng Nhập/Đăng Ký**: Cơ chế xác thực an toàn, bảo mật phiên đăng nhập, hỗ trợ thay đổi thông tin cá nhân và cập nhật ảnh đại diện.
+- **Yêu Thích & Lịch Sử**: Đồng bộ hóa danh sách phim yêu thích và lịch sử xem phim (tiến trình xem tập phim) trên mọi nền tảng.
+- **Giao Diện Hiện Đại**: Thiết kế chuẩn Obsidian sang trọng kết hợp màu Neon Cyan nổi bật, hiệu ứng shimmer loading và chuyển cảnh vi mô mượt mà.
 
-### 🔍 Tìm Kiếm & Lọc Đa Chiều Nâng Cao
-Hệ thống hỗ trợ tìm kiếm toàn cục thời gian thực, lọc động cùng lúc theo nhiều thể loại (17+ danh mục), quốc gia, năm phát hành vô cùng mượt mà.
+### 3. 📺 Phát Trực Tuyến & Tải Xuống
+- **Hỗ Trợ HLS Streaming**: Phát trực tuyến chuẩn HLS (HTTP Live Streaming) hiệu suất cao, tự động điều chỉnh và tải luồng phát mượt mà.
+- **Trình Phát Đa Tính Năng**: Chọn tập phim, tùy chỉnh tốc độ phát lại và điều khiển thông minh (ExoPlayer trên Android & Vidstack trên Web).
+- **📥 Tải Phim Ngoại Tuyến (Chỉ dành cho Android)**: Tải các tập phim về thiết bị qua hệ thống `DownloadManagerWrapper` để xem offline khi không có mạng.
+
+### 4. 🤖 Trợ Lý Trò Chuyện AI (AI Chatbot)
+- Tích hợp trực tiếp **Groq AI SDK** tại Backend, hỗ trợ chatbot thông minh phản hồi nhanh, tư vấn chọn phim và giao tiếp tự nhiên với người dùng ngay trên ứng dụng di động.
 
 ---
 
