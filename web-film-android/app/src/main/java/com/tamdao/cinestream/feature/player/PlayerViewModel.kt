@@ -26,11 +26,17 @@ class PlayerViewModel @Inject constructor(
     val offlineEpisode: StateFlow<OfflineEpisodeEntity?> = _offlineEpisode.asStateFlow()
 
     fun loadEpisode(movieSlug: String, episodeSlug: String) {
+        val rawEpisodeSlug = if (episodeSlug.startsWith(movieSlug + "_")) {
+            episodeSlug.substring(movieSlug.length + 1)
+        } else {
+            episodeSlug
+        }
+        val uniqueEpisodeSlug = "${movieSlug}_$rawEpisodeSlug"
+
         viewModelScope.launch {
             _uiState.value = PlayerUiState.Loading
             
             // Check offline episode using composite unique ID
-            val uniqueEpisodeSlug = "${movieSlug}_${episodeSlug}"
             val localEp = repository.getOfflineEpisode(uniqueEpisodeSlug)
             _offlineEpisode.value = localEp
             
@@ -39,7 +45,7 @@ class PlayerViewModel @Inject constructor(
                 val response = repository.getMovieDetail(movieSlug)
                 if (response.success && response.data != null) {
                     val allEpisodes = response.data.servers.flatMap { it.episodes }
-                    val currentEpisode = allEpisodes.find { it.slug == episodeSlug }
+                    val currentEpisode = allEpisodes.find { it.slug == rawEpisodeSlug }
                     
                     if (currentEpisode != null) {
                         _uiState.value = PlayerUiState.Success(
@@ -65,7 +71,7 @@ class PlayerViewModel @Inject constructor(
                     val servers: List<com.tamdao.cinestream.data.model.ServerEpisodeGroupDto> = gson.fromJson(localMovie.serversJson, typeToken)
                     
                     val allEpisodes = servers.flatMap { it.episodes }
-                    val currentEpisode = allEpisodes.find { it.slug == episodeSlug }
+                    val currentEpisode = allEpisodes.find { it.slug == rawEpisodeSlug }
                     
                     if (currentEpisode != null) {
                         _uiState.value = PlayerUiState.Success(
