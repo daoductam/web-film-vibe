@@ -2,6 +2,7 @@ package com.tamdao.cinestream.feature.detail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tamdao.cinestream.core.util.ErrorMapper
 import com.tamdao.cinestream.data.model.*
 import com.tamdao.cinestream.data.repository.MovieRepository
 import com.tamdao.cinestream.data.repository.SocialRepository
@@ -66,7 +67,7 @@ class MovieDetailViewModel @Inject constructor(
                     if (localDetail != null) {
                         _uiState.value = MovieDetailUiState.Success(localDetail)
                     } else {
-                        _uiState.value = MovieDetailUiState.Error(response.message ?: "Unknown error")
+                        _uiState.value = MovieDetailUiState.Error("Không thể tải thông tin phim. Vui lòng thử lại.")
                     }
                 }
             } catch (e: Exception) {
@@ -75,7 +76,7 @@ class MovieDetailViewModel @Inject constructor(
                 if (localDetail != null) {
                     _uiState.value = MovieDetailUiState.Success(localDetail)
                 } else {
-                    _uiState.value = MovieDetailUiState.Error(e.message ?: "Connection failed")
+                    _uiState.value = MovieDetailUiState.Error(ErrorMapper.mapToString(e))
                 }
             }
         }

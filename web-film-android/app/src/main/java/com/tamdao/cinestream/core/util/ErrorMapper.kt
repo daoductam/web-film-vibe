@@ -40,4 +40,15 @@ object ErrorMapper {
             }
         }
     }
+
+    /**
+     * Convenience method: maps a Throwable directly to a user-friendly String.
+     * Use this when the error state is a plain String instead of UiText.
+     */
+    fun mapToString(throwable: Throwable): String {
+        return when (val uiText = mapToUiText(throwable)) {
+            is UiText.DynamicString -> uiText.value
+            is UiText.StringResource -> "Đã có lỗi xảy ra. Vui lòng thử lại sau."
+        }
+    }
 }

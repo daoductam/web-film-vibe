@@ -17,7 +17,7 @@ class AIChatRepository @Inject constructor(
                 if (response.success && response.data != null) {
                     Result.success(response.data)
                 } else {
-                    Result.failure(Exception(response.message ?: "Unknown error occurred"))
+                    Result.failure(Exception(response.message ?: "Có lỗi xảy ra. Vui lòng thử lại."))
                 }
             } catch (e: Exception) {
                 Result.failure(e)
