@@ -120,6 +120,13 @@ class DownloadManagerWrapper(private val context: Context) {
 
         downloadHelper.prepare(object : DownloadHelper.Callback {
             override fun onPrepared(helper: DownloadHelper) {
+                // Select default tracks (video, audio, etc.) for HLS downloading,
+                // otherwise it only downloads the manifest file and completes instantly without saving media files.
+                val parameters = DownloadHelper.getDefaultTrackSelectorParameters(context)
+                for (i in 0 until helper.periodCount) {
+                    helper.addTrackSelection(i, parameters)
+                }
+
                 val downloadRequest = helper.getDownloadRequest(slug.toByteArray())
                 android.util.Log.d("DownloadManagerWrapper", "DownloadHelper prepared. Starting download for $slug from $url")
                 androidx.media3.exoplayer.offline.DownloadService.sendAddDownload(
