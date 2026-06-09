@@ -29,11 +29,11 @@ fun LibraryScreen(
 ) {
     val favorites by viewModel.favorites.collectAsState()
 
-    Column(modifier = Modifier.fillMaxSize().background(Obsidian)) {
+    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         // Header
         Text(
             text = "Phim Yêu Thích",
-            color = Color.White,
+            color = MaterialTheme.colorScheme.onBackground,
             fontSize = 26.sp,
             fontWeight = FontWeight.Black,
             modifier = Modifier
@@ -41,7 +41,7 @@ fun LibraryScreen(
                 .padding(16.dp)
         )
 
-        Divider(color = Color.White.copy(alpha = 0.1f))
+        HorizontalDivider(color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f))
 
         if (favorites.isEmpty()) {
             EmptyLibraryMessage()
@@ -70,25 +70,25 @@ fun EmptyLibraryMessage() {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = "Thư viện trống",
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onBackground,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "Hãy thả tim cho bộ phim bạn yêu thích!",
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                 fontSize = 14.sp
             )
             Spacer(modifier = Modifier.height(24.dp))
             Surface(
-                color = NeonCyan.copy(alpha = 0.1f),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                 shape = androidx.compose.foundation.shape.CircleShape
             ) {
                 Icon(
                     imageVector = androidx.compose.material.icons.Icons.Default.FavoriteBorder,
                     contentDescription = null,
-                    tint = NeonCyan,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(24.dp).size(48.dp)
                 )
             }

@@ -10,6 +10,9 @@ import kotlinx.coroutines.launch
 import com.tamdao.cinestream.data.repository.MovieRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.SharingStarted
 import javax.inject.Inject
 
 @HiltViewModel
@@ -21,6 +24,15 @@ class ProfileViewModel @Inject constructor(
 
     private val _syncState = MutableStateFlow<SyncStatus>(SyncStatus.Idle)
     val syncState = _syncState.asStateFlow()
+
+    val themeMode: StateFlow<String> = sessionManager.themeMode
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "SYSTEM")
+
+    fun setThemeMode(mode: String) {
+        viewModelScope.launch {
+            sessionManager.setThemeMode(mode)
+        }
+    }
 
     fun logout() {
         viewModelScope.launch {

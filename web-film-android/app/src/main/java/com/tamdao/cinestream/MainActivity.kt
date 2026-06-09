@@ -30,10 +30,17 @@ import com.tamdao.cinestream.feature.profile.*
 import com.tamdao.cinestream.feature.movielist.MovieListScreen
 import com.tamdao.cinestream.ui.theme.CineStreamTheme
 import com.tamdao.cinestream.ui.theme.Obsidian
+import com.tamdao.cinestream.core.session.SessionManager
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import javax.inject.Inject
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @Inject
+    lateinit var sessionManager: SessionManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // 1. Cài đặt Splash Screen trước khi gọi super.onCreate
         installSplashScreen()
@@ -42,7 +49,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         
         setContent {
-            CineStreamTheme {
+            val themeMode by sessionManager.themeMode.collectAsState(initial = "SYSTEM")
+            CineStreamTheme(themeMode = themeMode) {
                 val navController = rememberNavController()
 
                 Scaffold(

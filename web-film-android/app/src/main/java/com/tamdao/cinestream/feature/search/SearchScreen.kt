@@ -39,27 +39,27 @@ fun SearchScreen(
     val uiState by viewModel.uiState.collectAsState()
     val selectedCategory by viewModel.selectedCategory.collectAsState()
 
-    Column(modifier = Modifier.fillMaxSize().background(Obsidian)) {
+    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         // Search Bar
         Row(
             modifier = Modifier.statusBarsPadding().padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onBackClick) {
-                Icon(Icons.Default.ArrowBack, contentDescription = null, tint = Color.White)
+                Icon(Icons.Default.ArrowBack, contentDescription = null, tint = MaterialTheme.colorScheme.onBackground)
             }
             
             TextField(
                 value = searchQuery,
                 onValueChange = { viewModel.onQueryChanged(it) },
                 modifier = Modifier.weight(1f),
-                placeholder = { Text("Bạn muốn xem phim gì?", color = Color.Gray) },
+                placeholder = { Text("Bạn muốn xem phim gì?", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)) },
                 colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.White.copy(alpha = 0.1f),
-                    unfocusedContainerColor = Color.White.copy(alpha = 0.1f),
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    cursorColor = NeonCyan,
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
+                    cursorColor = MaterialTheme.colorScheme.primary,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent
                 ),
@@ -67,7 +67,7 @@ fun SearchScreen(
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
                         IconButton(onClick = { viewModel.onQueryChanged("") }) {
-                            Icon(Icons.Default.Close, contentDescription = null, tint = Color.Gray)
+                            Icon(Icons.Default.Close, contentDescription = null, tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f))
                         }
                     }
                 },
@@ -75,7 +75,7 @@ fun SearchScreen(
             )
         }
 
-        // Filter Quick Chips (Đã chuyển sang LazyRow để cuộn ngang và sửa lỗi tràn màu)
+        // Filter Quick Chips
         FilterChipsRow(
             selectedCategory = selectedCategory,
             onCategoryClick = { viewModel.onCategorySelected(it) }
@@ -89,11 +89,10 @@ fun SearchScreen(
                         modifier = Modifier.align(Alignment.Center),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text("Khám phá hàng ngàn bộ phim", color = Color.Gray)
+                        Text("Khám phá hàng ngàn bộ phim", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f))
                     }
                 }
                 is SearchUiState.Loading -> {
-                    // Sử dụng Shimmer thay cho Spinner
                     Column(modifier = Modifier.fillMaxSize()) {
                         repeat(3) {
                             MovieListShimmer()
@@ -104,7 +103,7 @@ fun SearchScreen(
                     if (state.results.isEmpty()) {
                         Text(
                             "Không tìm thấy phim nào phù hợp",
-                            color = Color.Gray,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                             modifier = Modifier.align(Alignment.Center)
                         )
                     } else {
@@ -135,7 +134,6 @@ fun FilterChipsRow(
     selectedCategory: String?,
     onCategoryClick: (String?) -> Unit
 ) {
-    // Danh sách thể loại đầy đủ và phong phú hơn
     val categories = listOf(
         "Hành động" to "hanh-dong",
         "Cổ trang" to "co-trang",
@@ -168,10 +166,10 @@ fun FilterChipsRow(
                 onClick = { onCategoryClick(if (isSelected) null else slug) },
                 label = { Text(name, fontSize = 13.sp) },
                 colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = NeonCyan,
-                    selectedLabelColor = Obsidian,
-                    containerColor = Color.White.copy(alpha = 0.1f),
-                    labelColor = Color.White
+                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    labelColor = MaterialTheme.colorScheme.onBackground
                 ),
                 border = null,
                 shape = RoundedCornerShape(16.dp)

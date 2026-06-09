@@ -26,6 +26,17 @@ class SessionManager @Inject constructor(
         private val REFRESH_TOKEN = stringPreferencesKey("refresh_token")
         private val IS_LOGGED_IN = booleanPreferencesKey("is_logged_in")
         private val USER_INFO = stringPreferencesKey("user_info")
+        private val THEME_MODE = stringPreferencesKey("theme_mode")
+    }
+
+    val themeMode: Flow<String> = context.dataStore.data.map { preferences ->
+        preferences[THEME_MODE] ?: "SYSTEM"
+    }
+
+    suspend fun setThemeMode(mode: String) {
+        context.dataStore.edit { preferences ->
+            preferences[THEME_MODE] = mode
+        }
     }
 
     val accessToken: Flow<String?> = context.dataStore.data.map { preferences ->

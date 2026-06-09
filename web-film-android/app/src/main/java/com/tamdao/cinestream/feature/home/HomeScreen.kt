@@ -50,7 +50,7 @@ fun HomeScreen(
     val watchHistory by viewModel.watchHistory.collectAsState()
     var showAiChat by remember { mutableStateOf(false) }
 
-    Box(modifier = Modifier.fillMaxSize().background(Obsidian)) {
+    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         when (val state = uiState) {
             is HomeUiState.Loading -> {
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
@@ -136,8 +136,8 @@ fun HomeScreen(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp),
-            containerColor = NeonCyan,
-            contentColor = Obsidian
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary
         ) {
             Icon(
                 imageVector = Icons.Default.AutoAwesome,
@@ -237,7 +237,7 @@ fun WatchHistorySection(history: List<WatchHistoryEntity>, onMovieClick: (String
     Column(modifier = Modifier.padding(vertical = 16.dp)) {
         Text(
             text = "Tiếp tục xem",
-            color = NeonCyan,
+            color = MaterialTheme.colorScheme.primary,
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
@@ -258,12 +258,12 @@ fun WatchHistoryCard(item: WatchHistoryEntity, onClick: (String) -> Unit) {
             AsyncImage(model = item.thumbUrl, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
             val progress = if (item.durationMs > 0) item.progressMs.toFloat() / item.durationMs else 0f
             Box(modifier = Modifier.fillMaxWidth().height(4.dp).align(Alignment.BottomStart).background(Color.Gray.copy(alpha = 0.5f))) {
-                Box(modifier = Modifier.fillMaxWidth(progress.coerceIn(0f, 1f)).fillMaxHeight().background(NeonCyan))
+                Box(modifier = Modifier.fillMaxWidth(progress.coerceIn(0f, 1f)).fillMaxHeight().background(MaterialTheme.colorScheme.primary))
             }
         }
         Spacer(modifier = Modifier.height(4.dp))
-        Text(text = item.title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-        Text(text = "Đang xem: ${item.lastEpisodeName}", color = Color.Gray, fontSize = 12.sp, maxLines = 1)
+        Text(text = item.title, color = MaterialTheme.colorScheme.onBackground, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+        Text(text = "Đang xem: ${item.lastEpisodeName}", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f), fontSize = 12.sp, maxLines = 1)
     }
 }
 
@@ -282,10 +282,10 @@ fun MovieSection(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = title, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text(text = title, color = MaterialTheme.colorScheme.onBackground, fontSize = 20.sp, fontWeight = FontWeight.Bold)
             Text(
                 text = "Xem tất cả",
-                color = NeonCyan,
+                color = MaterialTheme.colorScheme.primary,
                 fontSize = 14.sp,
                 modifier = Modifier.clickable { onSeeAllClick() }
             )
@@ -300,8 +300,8 @@ fun MovieSection(
 fun HomeErrorScreen(message: String) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(text = "Có lỗi xảy ra", color = Color.White, fontWeight = FontWeight.Bold)
-            Text(text = message, color = Color.Gray, fontSize = 14.sp)
+            Text(text = "Có lỗi xảy ra", color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold)
+            Text(text = message, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f), fontSize = 14.sp)
         }
     }
 }

@@ -42,19 +42,19 @@ fun ProfileScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Obsidian)
+            .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding()
     ) {
         // Header
         Text(
             text = "Cá nhân",
-            color = Color.White,
+            color = MaterialTheme.colorScheme.onBackground,
             fontSize = 28.sp,
             fontWeight = FontWeight.Black,
             modifier = Modifier.padding(16.dp)
         )
 
-        Divider(color = Color.White.copy(alpha = 0.1f))
+        HorizontalDivider(color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f))
 
         if (isLoggedIn && currentUser != null) {
             LoggedInContent(
@@ -68,7 +68,8 @@ fun ProfileScreen(
         } else {
             GuestContent(
                 onLoginClick = onLoginClick,
-                onRegisterClick = onRegisterClick
+                onRegisterClick = onRegisterClick,
+                viewModel = viewModel
             )
         }
     }
@@ -85,6 +86,14 @@ fun LoggedInContent(
 ) {
     val scrollState = rememberScrollState()
     val syncState by viewModel.syncState.collectAsState()
+    val currentThemeMode by viewModel.themeMode.collectAsState()
+    var showThemeDialog by remember { mutableStateOf(false) }
+
+    val themeLabel = when (currentThemeMode) {
+        "LIGHT" -> "Sáng"
+        "DARK" -> "Tối"
+        else -> "Theo hệ thống"
+    }
 
     Column(
         modifier = Modifier
@@ -102,7 +111,7 @@ fun LoggedInContent(
             modifier = Modifier
                 .size(100.dp)
                 .clip(CircleShape)
-                .background(SurfaceDark),
+                .background(MaterialTheme.colorScheme.surface),
             contentScale = ContentScale.Crop
         )
 
@@ -110,13 +119,13 @@ fun LoggedInContent(
 
         Text(
             text = user.fullName ?: user.username,
-            color = Color.White,
+            color = MaterialTheme.colorScheme.onBackground,
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold
         )
         Text(
             text = "@${user.username}",
-            color = NeonCyan,
+            color = MaterialTheme.colorScheme.primary,
             fontSize = 14.sp
         )
 
@@ -149,11 +158,18 @@ fun LoggedInContent(
             label = "Phim đã tải",
             onClick = onDownloadedMoviesClick
         )
+        
+        ProfileMenuItem(
+            icon = Icons.Default.Palette,
+            label = "Giao diện",
+            subtitle = themeLabel,
+            onClick = { showThemeDialog = true }
+        )
 
         if (syncState is SyncStatus.Success) {
             Text(
                 text = (syncState as SyncStatus.Success).message,
-                color = NeonCyan,
+                color = MaterialTheme.colorScheme.primary,
                 fontSize = 12.sp,
                 modifier = Modifier.padding(vertical = 8.dp)
             )
@@ -177,13 +193,66 @@ fun LoggedInContent(
         
         Spacer(modifier = Modifier.height(32.dp))
     }
+
+    if (showThemeDialog) {
+        AlertDialog(
+            onDismissRequest = { showThemeDialog = false },
+            title = { Text("Chọn giao diện") },
+            text = {
+                Column {
+                    val options = listOf(
+                        "SYSTEM" to "Theo hệ thống",
+                        "LIGHT" to "Giao diện sáng",
+                        "DARK" to "Giao diện tối"
+                    )
+                    options.forEach { (mode, label) ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.setThemeMode(mode)
+                                    showThemeDialog = false
+                                }
+                                .padding(vertical = 12.dp, horizontal = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = currentThemeMode == mode,
+                                onClick = {
+                                    viewModel.setThemeMode(mode)
+                                    showThemeDialog = false
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(text = label, color = MaterialTheme.colorScheme.onSurface)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showThemeDialog = false }) {
+                    Text("Đóng")
+                }
+            }
+        )
+    }
 }
 
 @Composable
 fun GuestContent(
     onLoginClick: () -> Unit,
-    onRegisterClick: () -> Unit
+    onRegisterClick: () -> Unit,
+    viewModel: ProfileViewModel
 ) {
+    val currentThemeMode by viewModel.themeMode.collectAsState()
+    var showThemeDialog by remember { mutableStateOf(false) }
+
+    val themeLabel = when (currentThemeMode) {
+        "LIGHT" -> "Sáng"
+        "DARK" -> "Tối"
+        else -> "Theo hệ thống"
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -194,7 +263,7 @@ fun GuestContent(
         Icon(
             imageVector = Icons.Default.Person,
             contentDescription = null,
-            tint = NeonCyan,
+            tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(80.dp)
         )
 
@@ -202,7 +271,7 @@ fun GuestContent(
 
         Text(
             text = "Đăng nhập để đồng bộ",
-            color = Color.White,
+            color = MaterialTheme.colorScheme.onBackground,
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold
         )
@@ -211,17 +280,30 @@ fun GuestContent(
 
         Text(
             text = "Lưu lại danh sách phim yêu thích và lịch sử xem của bạn trên mọi thiết bị.",
-            color = Color.Gray,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
             fontSize = 14.sp,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Allow theme switching even for guests
+        ProfileMenuItem(
+            icon = Icons.Default.Palette,
+            label = "Giao diện",
+            subtitle = themeLabel,
+            onClick = { showThemeDialog = true }
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
 
         Button(
             onClick = onLoginClick,
             modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = NeonCyan, contentColor = Obsidian),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            ),
             shape = RoundedCornerShape(12.dp)
         ) {
             Text("Đăng nhập", fontWeight = FontWeight.Bold)
@@ -232,8 +314,8 @@ fun GuestContent(
         OutlinedButton(
             onClick = onRegisterClick,
             modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = NeonCyan),
-            border = androidx.compose.foundation.BorderStroke(1.dp, NeonCyan),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
             shape = RoundedCornerShape(12.dp)
         ) {
             Text("Đăng ký tài khoản", fontWeight = FontWeight.Bold)
@@ -242,8 +324,51 @@ fun GuestContent(
         Spacer(modifier = Modifier.height(32.dp))
         
         TextButton(onClick = { /* Stay as guest */ }) {
-            Text("Tiếp tục với tư cách khách", color = Color.Gray)
+            Text("Tiếp tục với tư cách khách", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f))
         }
+    }
+
+    if (showThemeDialog) {
+        AlertDialog(
+            onDismissRequest = { showThemeDialog = false },
+            title = { Text("Chọn giao diện") },
+            text = {
+                Column {
+                    val options = listOf(
+                        "SYSTEM" to "Theo hệ thống",
+                        "LIGHT" to "Giao diện sáng",
+                        "DARK" to "Giao diện tối"
+                    )
+                    options.forEach { (mode, label) ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.setThemeMode(mode)
+                                    showThemeDialog = false
+                                }
+                                .padding(vertical = 12.dp, horizontal = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = currentThemeMode == mode,
+                                onClick = {
+                                    viewModel.setThemeMode(mode)
+                                    showThemeDialog = false
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(text = label, color = MaterialTheme.colorScheme.onSurface)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showThemeDialog = false }) {
+                    Text("Đóng")
+                }
+            }
+        )
     }
 }
 
@@ -262,7 +387,7 @@ fun ProfileMenuItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Surface(
-            color = SurfaceDark,
+            color = MaterialTheme.colorScheme.surface,
             shape = CircleShape,
             modifier = Modifier.size(40.dp)
         ) {
@@ -270,7 +395,7 @@ fun ProfileMenuItem(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = NeonCyan,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -281,14 +406,14 @@ fun ProfileMenuItem(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = label,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onBackground,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium
             )
             if (subtitle != null) {
                 Text(
                     text = subtitle,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
                     fontSize = 12.sp
                 )
             }
@@ -297,7 +422,7 @@ fun ProfileMenuItem(
         Icon(
             imageVector = Icons.Default.ChevronRight,
             contentDescription = null,
-            tint = Color.Gray
+            tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
         )
     }
 }

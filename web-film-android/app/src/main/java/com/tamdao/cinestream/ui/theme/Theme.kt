@@ -9,6 +9,10 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.ui.graphics.Color
+
 private val CineStreamColorScheme = darkColorScheme(
     primary = NeonCyan,
     secondary = TextSecondary,
@@ -22,17 +26,38 @@ private val CineStreamColorScheme = darkColorScheme(
     onSurface = TextPrimary
 )
 
+private val CineStreamLightColorScheme = lightColorScheme(
+    primary = DeepCyan,
+    secondary = LightTextSecondary,
+    tertiary = DeepCyan.copy(alpha = 0.1f),
+    background = LightBackground,
+    surface = LightSurface,
+    onPrimary = Color.White,
+    onSecondary = LightTextPrimary,
+    onTertiary = DeepCyan,
+    onBackground = LightTextPrimary,
+    onSurface = LightTextPrimary
+)
+
 @Composable
 fun CineStreamTheme(
+    themeMode: String = "SYSTEM",
     content: @Composable () -> Unit
 ) {
-    val colorScheme = CineStreamColorScheme
+    val isSystemDark = isSystemInDarkTheme()
+    val useDarkTheme = when (themeMode) {
+        "DARK" -> true
+        "LIGHT" -> false
+        else -> isSystemDark
+    }
+
+    val colorScheme = if (useDarkTheme) CineStreamColorScheme else CineStreamLightColorScheme
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = Obsidian.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
+            window.statusBarColor = if (useDarkTheme) Obsidian.toArgb() else LightBackground.toArgb()
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !useDarkTheme
         }
     }
 
