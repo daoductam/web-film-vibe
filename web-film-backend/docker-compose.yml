@@ -55,7 +55,7 @@ services:
       - "7474:7474"
       - "7687:7687"
     environment:
-      - NEO4J_AUTH=neo4j/password123
+      - NEO4J_AUTH=neo4j/secret@1234
     volumes:
       - neo4j_data:/data
       - neo4j_import:/import
