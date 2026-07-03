@@ -75,8 +75,8 @@ classDiagram
         +String slug
     }
 
-    UserNode --> MovieNode : "FAVORITE (weight: 3.0)"
-    UserNode --> MovieNode : "WATCHED (weight: 1.0)"
+    UserNode --> MovieNode : FAVORITE_weight_3
+    UserNode --> MovieNode : WATCHED_weight_1
     MovieNode --> CategoryNode : BELONGS_TO
 ```
 

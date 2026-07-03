@@ -438,6 +438,6 @@ class MovieRepository @Inject constructor(
         quality = "HD",
         currentEpisode = null,
         language = null,
-        viewCount = views ?: 0
+        viewCount = (views ?: 0).toLong()
     )
 }
