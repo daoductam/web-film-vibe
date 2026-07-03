@@ -310,7 +310,7 @@ export const MovieDetailPage = () => {
 
                             <div>
                                 <h3 className="text-xl font-serif font-bold text-white mb-5 pl-2 border-l-4 border-neon">Phim gợi ý</h3>
-                                <RelatedMovies categorySlug={movie.categories?.[0]?.slug} />
+                                <RelatedMovies categorySlug={movie.categories?.[0]?.slug} movieSlug={movie.slug} />
                             </div>
                         </div>
                     </div>

@@ -83,6 +83,18 @@ fun HomeScreen(
                         }
                     }
 
+                    // 2. Gợi ý dành riêng cho bạn
+                    if (state.recommendedMovies.isNotEmpty()) {
+                        item {
+                            MovieSection(
+                                title = "Gợi ý dành riêng cho bạn",
+                                movies = state.recommendedMovies,
+                                onMovieClick = onMovieClick,
+                                onSeeAllClick = {}
+                            )
+                        }
+                    }
+
                     item { 
                         MovieSection(
                             title = "Phim Mới Cập Nhật", 

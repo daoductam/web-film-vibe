@@ -49,7 +49,46 @@ interface AuthApiService {
 
     @POST("v1/users/me/history/sync")
     suspend fun syncHistory(@Body requests: List<WatchHistoryRequest>): ApiResponse<List<WatchHistoryResponse>>
+
+    @POST("graphql")
+    suspend fun getPersonalizedRecommendations(
+        @Body request: GraphQLRequest = GraphQLRequest(
+            query = "query { personalizedRecommendations { id title slug posterUrl views rating } }"
+        )
+    ): GraphQLResponse<PersonalizedRecommendationsData>
+
+    @POST("graphql")
+    suspend fun getSimilarMovies(
+        @Body request: GraphQLRequest
+    ): GraphQLResponse<SimilarMoviesData>
 }
+
+// GraphQL DTOs
+data class GraphQLRequest(
+    val query: String,
+    val variables: Map<String, Any> = emptyMap()
+)
+
+data class GraphQLResponse<T>(
+    val data: T
+)
+
+data class MovieNodeDto(
+    val id: String,
+    val title: String,
+    val slug: String,
+    val posterUrl: String?,
+    val views: Int?,
+    val rating: Double?
+)
+
+data class PersonalizedRecommendationsData(
+    val personalizedRecommendations: List<MovieNodeDto>
+)
+
+data class SimilarMoviesData(
+    val similarMovies: List<MovieNodeDto>
+)
 
 // Additional sync DTOs for the API service if not already defined (adding here for clarity or moving to AuthDto)
 data class SyncFavoriteRequest(

@@ -394,4 +394,50 @@ class MovieRepository @Inject constructor(
         language = null,
         viewCount = 0
     )
+
+    fun getPersonalizedRecommendations(): Flow<List<MovieDto>> = flow {
+        if (sessionManager.isLoggedIn.first()) {
+            try {
+                val response = authApiService.getPersonalizedRecommendations()
+                val list = response.data.personalizedRecommendations.map { it.toMovieDto() }
+                emit(list)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to get personalized recommendations: ${e.localizedMessage}")
+                emit(emptyList())
+            }
+        } else {
+            emit(emptyList())
+        }
+    }
+
+    fun getSimilarMovies(slug: String): Flow<List<MovieDto>> = flow {
+        try {
+            val response = authApiService.getSimilarMovies(
+                com.tamdao.cinestream.core.network.GraphQLRequest(
+                    query = "query(\$slug: String!) { similarMovies(slug: \$slug) { id title slug posterUrl views rating } }",
+                    variables = mapOf("slug" to slug)
+                )
+            )
+            val list = response.data.similarMovies.map { it.toMovieDto() }
+            emit(list)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to get similar movies: ${e.localizedMessage}")
+            emit(emptyList())
+        }
+    }
+
+    private fun com.tamdao.cinestream.core.network.MovieNodeDto.toMovieDto() = MovieDto(
+        id = id.toLongOrNull() ?: 0L,
+        title = title,
+        originTitle = "",
+        slug = slug,
+        thumbUrl = posterUrl ?: "",
+        posterUrl = posterUrl ?: "",
+        year = 0,
+        type = "MOVIE",
+        quality = "HD",
+        currentEpisode = null,
+        language = null,
+        viewCount = views ?: 0
+    )
 }

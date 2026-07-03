@@ -35,6 +35,9 @@ class MovieDetailViewModel @Inject constructor(
     private val _offlineEpisodes = MutableStateFlow<List<OfflineEpisodeEntity>>(emptyList())
     val offlineEpisodes: StateFlow<List<OfflineEpisodeEntity>> = _offlineEpisodes.asStateFlow()
 
+    private val _similarMovies = MutableStateFlow<List<MovieDto>>(emptyList())
+    val similarMovies: StateFlow<List<MovieDto>> = _similarMovies.asStateFlow()
+
     fun loadMovieDetail(slug: String) {
         viewModelScope.launch {
             _uiState.value = MovieDetailUiState.Loading
@@ -50,6 +53,14 @@ class MovieDetailViewModel @Inject constructor(
                 try {
                     repository.isFavorite(slug).collectLatest {
                         _isFavorite.value = it
+                    }
+                } catch (e: Exception) {}
+            }
+
+            launch {
+                try {
+                    repository.getSimilarMovies(slug).collectLatest { similar ->
+                        _similarMovies.value = similar
                     }
                 } catch (e: Exception) {}
             }

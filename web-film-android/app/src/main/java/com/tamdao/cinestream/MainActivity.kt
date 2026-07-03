@@ -182,6 +182,9 @@ class MainActivity : ComponentActivity() {
                                 onBackClick = { navController.popBackStack() },
                                 onPlayClick = { movieSlug, epSlug ->
                                     navController.navigate(Screen.Player.createRoute(movieSlug, epSlug))
+                                },
+                                onMovieClick = { nextSlug ->
+                                    navController.navigate(Screen.MovieDetail.createRoute(nextSlug))
                                 }
                             )
                         }

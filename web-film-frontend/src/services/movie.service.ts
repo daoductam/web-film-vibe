@@ -56,5 +56,42 @@ export const movieService = {
     getMovieDetail: async (slug: string) => {
          const response = await api.get<ApiResponse<any>>(`/movies/${slug}`);
          return response.data.data;
+    },
+
+    getPersonalizedRecommendations: async (): Promise<Movie[]> => {
+        const query = `
+            query {
+                personalizedRecommendations {
+                    id
+                    title
+                    slug
+                    posterUrl
+                    views
+                    rating
+                }
+            }
+        `;
+        const response = await api.post('/../graphql', { query });
+        return response.data.data.personalizedRecommendations;
+    },
+
+    getSimilarMovies: async (slug: string): Promise<Movie[]> => {
+        const query = `
+            query($slug: String!) {
+                similarMovies(slug: $slug) {
+                    id
+                    title
+                    slug
+                    posterUrl
+                    views
+                    rating
+                }
+            }
+        `;
+        const response = await api.post('/../graphql', { 
+            query, 
+            variables: { slug } 
+        });
+        return response.data.data.similarMovies;
     }
 };

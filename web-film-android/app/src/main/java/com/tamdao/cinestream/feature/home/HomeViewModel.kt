@@ -48,17 +48,18 @@ class HomeViewModel @Inject constructor(
                 }
                 .collectLatest { latest ->
                     if (latest.isNotEmpty()) {
-                        // Lấy thêm các danh mục khác song song
                         val series = repository.getMoviesByType("series")
                         val singles = repository.getMoviesByType("single")
                         val hoathinh = repository.getMoviesByType("hoathinh")
+                        val recommended = repository.getPersonalizedRecommendations().first()
 
                         _uiState.value = HomeUiState.Success(
                             heroMovie = latest.first(),
                             latestMovies = latest.drop(1),
                             seriesMovies = series,
                             singleMovies = singles,
-                            animationMovies = hoathinh
+                            animationMovies = hoathinh,
+                            recommendedMovies = recommended
                         )
                     } else {
                         _uiState.value = HomeUiState.Error(UiText.DynamicString("Không có dữ liệu phim."))
@@ -75,7 +76,8 @@ sealed class HomeUiState {
         val latestMovies: List<MovieDto>,
         val seriesMovies: List<MovieDto> = emptyList(),
         val singleMovies: List<MovieDto> = emptyList(),
-        val animationMovies: List<MovieDto> = emptyList()
+        val animationMovies: List<MovieDto> = emptyList(),
+        val recommendedMovies: List<MovieDto> = emptyList()
     ) : HomeUiState()
     data class Error(val message: UiText) : HomeUiState()
 }

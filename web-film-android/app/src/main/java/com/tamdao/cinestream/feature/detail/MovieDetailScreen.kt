@@ -6,6 +6,8 @@ import com.tamdao.cinestream.data.model.EpisodeDto
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -48,6 +50,7 @@ fun MovieDetailScreen(
     slug: String,
     onBackClick: () -> Unit,
     onPlayClick: (String, String) -> Unit,
+    onMovieClick: (String) -> Unit,
     viewModel: MovieDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -55,6 +58,7 @@ fun MovieDetailScreen(
     val comments by viewModel.comments.collectAsState()
     val userRating by viewModel.userRating.collectAsState()
     val offlineEpisodes by viewModel.offlineEpisodes.collectAsState()
+    val similarMovies by viewModel.similarMovies.collectAsState()
     var showDownloadSheet by remember { mutableStateOf(false) }
     val context = androidx.compose.ui.platform.LocalContext.current
     var showOfflineDialog by remember { mutableStateOf(false) }
@@ -172,6 +176,57 @@ fun MovieDetailScreen(
                                         }
                                         repeat(4 - rowEps.size) {
                                             Spacer(modifier = Modifier.weight(1f))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Similar Movies Section
+                        if (similarMovies.isNotEmpty()) {
+                            item {
+                                Spacer(modifier = Modifier.height(24.dp))
+                                Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                                    Text(
+                                        text = "Phim tương tự",
+                                        color = NeonCyan,
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(bottom = 12.dp)
+                                    )
+                                    LazyRow(
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        items(similarMovies) { sim ->
+                                            Column(
+                                                modifier = Modifier
+                                                    .width(110.dp)
+                                                    .clickable { onMovieClick(sim.slug) }
+                                            ) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .height(160.dp)
+                                                        .clip(RoundedCornerShape(8.dp))
+                                                        .background(Color.DarkGray)
+                                                ) {
+                                                    AsyncImage(
+                                                        model = sim.posterUrl ?: sim.thumbUrl,
+                                                        contentDescription = null,
+                                                        modifier = Modifier.fillMaxSize(),
+                                                        contentScale = ContentScale.Crop
+                                                    )
+                                                }
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                Text(
+                                                    text = sim.title,
+                                                    color = Color.White,
+                                                    fontSize = 12.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    maxLines = 2
+                                                )
+                                            }
                                         }
                                     }
                                 }

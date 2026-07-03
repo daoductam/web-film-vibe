@@ -5,8 +5,11 @@ import { HeroSection } from '../components/movie/HeroSection';
 import { MovieSection } from '../components/movie/MovieSection';
 import { FeaturedCollection } from '../components/movie/FeaturedCollection';
 import { movieService } from '../services/movie.service';
+import { useAuthStore } from '../store/authStore';
 
 export const HomePage = () => {
+    const { isAuthenticated } = useAuthStore();
+
     // Fetch latest movies
     const { data: latestMovies, isLoading: loadingLatest } = useQuery({
         queryKey: ['movies', 'latest'],
@@ -21,7 +24,12 @@ export const HomePage = () => {
         queryFn: () => movieService.getPopularMovies(0, 10), 
     });
 
-
+    // Fetch personalized recommendations (Neo4j Graph-based)
+    const { data: recommendedMovies, isLoading: loadingRecommended } = useQuery({
+        queryKey: ['movies', 'recommended'],
+        queryFn: () => movieService.getPersonalizedRecommendations(),
+        enabled: isAuthenticated,
+    });
     
     // Check for errors
     if (!loadingLatest && !loadingPopular && !latestMovies && !popularMovies) {
@@ -40,6 +48,15 @@ export const HomePage = () => {
                 <HeroSection />
                 
                 <div className="relative z-30 mt-10 md:-mt-20 pb-20 space-y-16 md:space-y-24">
+                    {/* Personalized Recommendations Section */}
+                    {isAuthenticated && recommendedMovies && recommendedMovies.length > 0 && (
+                        <MovieSection 
+                            title="Gợi ý dành riêng cho bạn" 
+                            movies={recommendedMovies} 
+                            isLoading={loadingRecommended} 
+                        />
+                    )}
+
                     {/* Latest Movies Section */}
                     <MovieSection 
                         title="Phim mới cập nhật" 
