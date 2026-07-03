@@ -5,6 +5,7 @@ import com.tamdao.web_film_backend.crawler.dto.CrawledMovie;
 import com.tamdao.web_film_backend.crawler.dto.CrawledServer;
 import com.tamdao.web_film_backend.entity.*;
 import com.tamdao.web_film_backend.repository.*;
+import com.tamdao.web_film_backend.service.GraphSyncService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,7 @@ public class DataMergerService {
     private final EpisodeRepository episodeRepository;
     private final CategoryRepository categoryRepository;
     private final CountryRepository countryRepository;
+    private final GraphSyncService graphSyncService;
 
     /**
      * Merge a crawled movie into the database.
@@ -75,6 +77,11 @@ public class DataMergerService {
         }
 
         movie = movieRepository.save(movie);
+        try {
+            graphSyncService.syncMovieNode(movie.getSlug());
+        } catch (Exception e) {
+            log.error("Failed to sync movie node on merge: " + movie.getSlug(), e);
+        }
 
         // Merge episodes
         if (crawled.getServers() != null) {

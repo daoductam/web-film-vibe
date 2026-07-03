@@ -47,6 +47,21 @@ services:
     networks:
       - cinestream-network
 
+  neo4j:
+    image: neo4j:5.12.0-community
+    container_name: cinestream-neo4j
+    restart: always
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=neo4j/password123
+    volumes:
+      - neo4j_data:/data
+      - neo4j_import:/import
+    networks:
+      - cinestream-network
+
 networks:
   cinestream-network:
     driver: bridge
@@ -54,3 +69,5 @@ networks:
 volumes:
   mysql_data:
   cinestream_uploads:
+  neo4j_data:
+  neo4j_import:

@@ -3,6 +3,7 @@ package com.tamdao.web_film_backend.controller;
 import com.tamdao.web_film_backend.dto.request.AIChatRequest;
 import com.tamdao.web_film_backend.dto.response.AIChatResponse;
 import com.tamdao.web_film_backend.dto.response.ApiResponse;
+import com.tamdao.web_film_backend.service.GraphSyncService;
 import com.tamdao.web_film_backend.service.ai.AIService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AIController {
 
     private final AIService aiService;
+    private final GraphSyncService graphSyncService;
 
     @PostMapping("/chat")
     @Operation(summary = "Chat with AI CineGuru", description = "Submit a natural language query and get movie recommendations.")
@@ -38,5 +40,16 @@ public class AIController {
             // We just ensure we throw it up to be caught by GlobalExceptionHandler.
             throw new RuntimeException(e.getMessage());
         }
+    }
+
+    @PostMapping("/sync-graph")
+    @Operation(summary = "Migrate MySQL data to Neo4j Graph DB", description = "Rebuild Neo4j nodes and relationships from MySQL data.")
+    public ResponseEntity<ApiResponse<String>> syncGraph() {
+        graphSyncService.syncAllData();
+        return ResponseEntity.ok(ApiResponse.<String>builder()
+                .success(true)
+                .message("Graph migration triggered asynchronously")
+                .data("Migration in progress...")
+                .build());
     }
 }
