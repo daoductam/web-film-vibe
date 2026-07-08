@@ -1,6 +1,9 @@
+import type { Movie, PageResponse } from './index';
+
 export interface AIChatMessage {
     role: 'user' | 'assistant';
     content: string;
+    movies?: Movie[];
 }
 
 export interface AIChatRequest {
@@ -9,5 +12,7 @@ export interface AIChatRequest {
 }
 
 export interface AIChatResponse {
-    reply: string;
+    isMovieQuery: boolean;
+    aiMessage: string;
+    movies: PageResponse<Movie>;
 }

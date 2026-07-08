@@ -402,6 +402,7 @@ class MovieRepository @Inject constructor(
                 val list = response.data.personalizedRecommendations.map { it.toMovieDto() }
                 emit(list)
             } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
                 Log.e(TAG, "Failed to get personalized recommendations: ${e.localizedMessage}")
                 emit(emptyList())
             }
@@ -421,6 +422,7 @@ class MovieRepository @Inject constructor(
             val list = response.data.similarMovies.map { it.toMovieDto() }
             emit(list)
         } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
             Log.e(TAG, "Failed to get similar movies: ${e.localizedMessage}")
             emit(emptyList())
         }

@@ -143,6 +143,34 @@ public class MovieService {
     }
 
     /**
+     * Search movies by description keyword with filters.
+     */
+    @Transactional(readOnly = true)
+    public Page<MovieResponse> searchMoviesByDescriptionKeyword(String keyword, String typeStr, java.util.List<String> categorySlugs, String countrySlug, Integer year, String statusStr, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        
+        com.tamdao.web_film_backend.entity.MovieType type = null;
+        if (typeStr != null && !typeStr.isEmpty()) {
+            try {
+                type = com.tamdao.web_film_backend.entity.MovieType.valueOf(typeStr.toUpperCase());
+            } catch (IllegalArgumentException ignored) {}
+        }
+
+        com.tamdao.web_film_backend.entity.MovieStatus status = null;
+        if (statusStr != null && !statusStr.isEmpty()) {
+            try {
+                status = com.tamdao.web_film_backend.entity.MovieStatus.valueOf(statusStr.toUpperCase());
+            } catch (IllegalArgumentException ignored) {}
+        }
+
+        int categoryCount = (categorySlugs == null || categorySlugs.isEmpty()) ? 0 : categorySlugs.size();
+        java.util.List<String> safeCategorySlugs = categoryCount > 0 ? categorySlugs : java.util.Collections.singletonList("EMPTY_PLACEHOLDER");
+
+        return movieRepository.searchByDescriptionKeyword(keyword, type, safeCategorySlugs, categoryCount, countrySlug, year, status, pageable)
+                .map(movieMapper::toResponse);
+    }
+
+    /**
      * Filter movies based on various criteria.
      */
     @Transactional(readOnly = true)

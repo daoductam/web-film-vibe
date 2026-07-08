@@ -101,7 +101,8 @@ class MainActivity : ComponentActivity() {
                                 onRegisterClick = { navController.navigate(Screen.Register.route) },
                                 onEditProfileClick = { navController.navigate(Screen.EditProfile.route) },
                                 onChangePasswordClick = { navController.navigate(Screen.ChangePassword.route) },
-                                onDownloadedMoviesClick = { navController.navigate(Screen.DownloadedMovies.route) }
+                                onDownloadedMoviesClick = { navController.navigate(Screen.DownloadedMovies.route) },
+                                onWatchPartyHistoryClick = { navController.navigate(Screen.WatchPartyHistory.route) }
                             )
                         }
 
@@ -185,7 +186,8 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onMovieClick = { nextSlug ->
                                     navController.navigate(Screen.MovieDetail.createRoute(nextSlug))
-                                }
+                                },
+                                navController = navController
                             )
                         }
 
@@ -201,6 +203,63 @@ class MainActivity : ComponentActivity() {
                             VideoPlayerScreen(
                                 movieSlug = slug,
                                 episodeSlug = epSlug,
+                                onBackClick = { navController.popBackStack() }
+                            )
+                        }
+
+                        composable(
+                            route = Screen.WatchPartyLobby.route,
+                            arguments = listOf(
+                                navArgument("movieId") {
+                                    type = NavType.StringType
+                                    nullable = true
+                                    defaultValue = null
+                                },
+                                navArgument("movieTitle") {
+                                    type = NavType.StringType
+                                    nullable = true
+                                    defaultValue = null
+                                },
+                                navArgument("moviePoster") {
+                                    type = NavType.StringType
+                                    nullable = true
+                                    defaultValue = null
+                                }
+                            )
+                        ) { backStackEntry ->
+                            val movieIdStr = backStackEntry.arguments?.getString("movieId")
+                            val movieTitle = backStackEntry.arguments?.getString("movieTitle")?.let { java.net.URLDecoder.decode(it, "UTF-8") }
+                            val moviePoster = backStackEntry.arguments?.getString("moviePoster")?.let { java.net.URLDecoder.decode(it, "UTF-8") }
+                            
+                            com.tamdao.cinestream.feature.watchparty.WatchPartyLobbyScreen(
+                                onBackClick = { navController.popBackStack() },
+                                onNavigateToRoom = { roomId ->
+                                    navController.navigate(Screen.WatchPartyRoom.createRoute(roomId))
+                                },
+                                preSelectedMovieId = movieIdStr?.toLongOrNull(),
+                                preSelectedMovieTitle = movieTitle,
+                                preSelectedMoviePoster = moviePoster
+                            )
+                        }
+
+                        composable(
+                            route = Screen.WatchPartyRoom.route,
+                            arguments = listOf(navArgument("roomId") { type = NavType.LongType }),
+                            deepLinks = listOf(
+                                androidx.navigation.navDeepLink {
+                                    uriPattern = "cinestream://watch-party/room/{roomId}"
+                                }
+                            )
+                        ) { backStackEntry ->
+                            val roomId = backStackEntry.arguments?.getLong("roomId") ?: 0L
+                            com.tamdao.cinestream.feature.watchparty.WatchPartyRoomScreen(
+                                roomId = roomId,
+                                onLeaveClick = { navController.popBackStack() }
+                            )
+                        }
+
+                        composable(Screen.WatchPartyHistory.route) {
+                            com.tamdao.cinestream.feature.watchparty.WatchPartyHistoryScreen(
                                 onBackClick = { navController.popBackStack() }
                             )
                         }

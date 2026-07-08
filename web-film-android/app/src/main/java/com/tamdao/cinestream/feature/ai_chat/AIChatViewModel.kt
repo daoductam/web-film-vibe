@@ -21,7 +21,7 @@ class AIChatViewModel @Inject constructor(
     private val _messages = MutableStateFlow<List<ChatMessage>>(
         listOf(
             ChatMessage(
-                content = UiText.DynamicString("Xin chào! Tôi là AI CineGuru. Bạn muốn tìm phim gì hôm nay?"),
+                content = UiText.DynamicString("Chào Senpai! Cine-chan có thể giúp gì cho anh hôm nay ạ? Anh hãy thử mô tả cốt truyện của bộ phim anh muốn tìm xem sao nhé!~ *mắt lấp lánh*"),
                 isFromUser = false
             )
         )

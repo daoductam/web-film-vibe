@@ -43,7 +43,7 @@ public class GraphSyncService {
     /**
      * Synchronize a single movie from MySQL to Neo4j.
      */
-    @Transactional(readOnly = true)
+    @Transactional("neo4jTransactionManager")
     public void syncMovieNode(String slug) {
         try {
             Optional<Movie> movieOpt = movieRepository.findBySlug(slug);
@@ -81,7 +81,7 @@ public class GraphSyncService {
     /**
      * Synchronize a user from MySQL to Neo4j.
      */
-    @Transactional(readOnly = true)
+    @Transactional("neo4jTransactionManager")
     public void syncUserNode(String username) {
         try {
             Optional<User> userOpt = userRepository.findByUsername(username);
@@ -160,7 +160,7 @@ public class GraphSyncService {
      * Complete Database Sync / Migration to Neo4j.
      */
     @Async
-    @Transactional(readOnly = true)
+    @Transactional("neo4jTransactionManager")
     public void syncAllData() {
         log.info("Starting complete graph data migration to Neo4j...");
         try {
@@ -169,7 +169,7 @@ public class GraphSyncService {
             log.info("Neo4j database cleared for fresh sync.");
 
             // 2. Sync all movies and their categories
-            movieRepository.findAll().forEach(movie -> {
+            movieRepository.findAllWithCategories().forEach(movie -> {
                 Set<CategoryNode> categoryNodes = movie.getCategories().stream()
                         .map(cat -> CategoryNode.builder()
                                 .id(cat.getId())
@@ -202,7 +202,7 @@ public class GraphSyncService {
             log.info("All users synced to Neo4j.");
 
             // 4. Sync Favorites
-            favoriteRepository.findAll().forEach(fav -> {
+            favoriteRepository.findAllWithUser().forEach(fav -> {
                 if (fav.getUser() != null) {
                     syncFavoriteEdge(fav.getUser().getUsername(), fav.getMovieSlug(), true);
                 }
@@ -210,7 +210,7 @@ public class GraphSyncService {
             log.info("All favorite edges synced to Neo4j.");
 
             // 5. Sync History
-            watchHistoryRepository.findAll().forEach(hist -> {
+            watchHistoryRepository.findAllWithUser().forEach(hist -> {
                 if (hist.getUser() != null) {
                     syncWatchHistoryEdge(hist.getUser().getUsername(), hist.getMovieSlug());
                 }

@@ -15,6 +15,8 @@ import { DashboardPage } from './pages/admin/DashboardPage';
 import { CrawlPage } from './pages/admin/CrawlPage';
 import { SearchPage } from './pages/search/SearchPage';
 import { ToastProvider } from './components/common/Toast';
+import { WatchPartyLobbyPage } from './pages/watchparty/WatchPartyLobbyPage';
+import { WatchPartyRoomPage } from './pages/watchparty/WatchPartyRoomPage';
 
 function App() {
   return (
@@ -30,6 +32,8 @@ function App() {
         <Route path="/popular" element={<PopularPage />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/movie/:slug" element={<MovieDetailPage />} />
+        <Route path="/watch-party" element={<WatchPartyLobbyPage />} />
+        <Route path="/watch-party/room/:id" element={<WatchPartyRoomPage />} />
         
         {/* Admin Routes */}
         <Route path="/admin" element={<AdminLayout />}>

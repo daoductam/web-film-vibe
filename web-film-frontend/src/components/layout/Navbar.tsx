@@ -46,6 +46,7 @@ export const Navbar = () => {
         { name: 'Phim bộ', path: '/series' },
         { name: 'Phim lẻ', path: '/movies' },
         { name: 'Mới & Phổ biến', path: '/popular' },
+        { name: 'Phòng xem chung 🎬', path: '/watch-party' },
     ];
 
     return (

@@ -19,4 +19,5 @@ public class ParsedAIIntent {
     private List<String> categories;
     private String country;
     private Integer year;
+    private String keyword;
 }

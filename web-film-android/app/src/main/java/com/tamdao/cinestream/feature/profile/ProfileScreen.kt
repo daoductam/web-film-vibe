@@ -33,6 +33,7 @@ fun ProfileScreen(
     onEditProfileClick: () -> Unit,
     onChangePasswordClick: () -> Unit,
     onDownloadedMoviesClick: () -> Unit,
+    onWatchPartyHistoryClick: () -> Unit,
     authViewModel: AuthViewModel = hiltViewModel(),
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
@@ -62,6 +63,7 @@ fun ProfileScreen(
                 onEditProfileClick = onEditProfileClick,
                 onChangePasswordClick = onChangePasswordClick,
                 onDownloadedMoviesClick = onDownloadedMoviesClick,
+                onWatchPartyHistoryClick = onWatchPartyHistoryClick,
                 onLogoutClick = { viewModel.logout() },
                 viewModel = viewModel
             )
@@ -81,6 +83,7 @@ fun LoggedInContent(
     onEditProfileClick: () -> Unit,
     onChangePasswordClick: () -> Unit,
     onDownloadedMoviesClick: () -> Unit,
+    onWatchPartyHistoryClick: () -> Unit,
     onLogoutClick: () -> Unit,
     viewModel: ProfileViewModel
 ) {
@@ -157,6 +160,11 @@ fun LoggedInContent(
             icon = Icons.Default.Download,
             label = "Phim đã tải",
             onClick = onDownloadedMoviesClick
+        )
+        ProfileMenuItem(
+            icon = Icons.Default.History,
+            label = "Lịch sử Watch Party",
+            onClick = onWatchPartyHistoryClick
         )
         
         ProfileMenuItem(

@@ -43,15 +43,16 @@ public class SecurityConfig {
             "/v1/countries/**",
             "/v1/auth/**",
             "/v1/users/avatars/**", // Avatar images served as public static resources
-            "/v1/test-crawl/**",  // TEMPORARY: Remove in production
-            "/v1/debug/**",       // TEMPORARY: Remove in production
+            "/v1/test-crawl/**", // TEMPORARY: Remove in production
+            "/v1/debug/**", // TEMPORARY: Remove in production
             "/v1/ai/**",
             "/swagger-ui/**",
             "/swagger-ui.html",
             "/v3/api-docs/**",
             "/actuator/health",
-            "/graphiql",          // GraphiQL IDE (development tool)
-            "/graphql"            // GraphQL endpoint (auth handled at resolver level)
+            "/graphiql", // GraphiQL IDE (development tool)
+            "/graphql", // GraphQL endpoint (auth handled at resolver level)
+            "/ws/**" // WebSocket STOMP endpoint
     };
 
     @Bean
@@ -62,14 +63,15 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/v1/watch-rooms/public").permitAll()
                         .requestMatchers(HttpMethod.GET, "/v1/comments/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/v1/ratings/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/v1/admin/**").hasRole("ADMIN")
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider())
-                .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
+                // .addFilterBefore(rateLimitingFilter,
+                // UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

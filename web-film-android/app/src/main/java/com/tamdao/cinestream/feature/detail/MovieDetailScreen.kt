@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.LiveTv
 import androidx.compose.foundation.clickable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,6 +43,8 @@ import coil.compose.AsyncImage
 import com.tamdao.cinestream.ui.theme.NeonCyan
 import com.tamdao.cinestream.ui.theme.Obsidian
 
+import com.tamdao.cinestream.core.navigation.Screen
+import androidx.navigation.NavController
 import com.tamdao.cinestream.feature.detail.components.CommentSection
 import com.tamdao.cinestream.feature.detail.components.StarRatingBar
 
@@ -52,6 +55,7 @@ fun MovieDetailScreen(
     onBackClick: () -> Unit,
     onPlayClick: (String, String) -> Unit,
     onMovieClick: (String) -> Unit,
+    navController: NavController,
     viewModel: MovieDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -80,6 +84,21 @@ fun MovieDetailScreen(
                 actions = {
                     val movie = (uiState as? MovieDetailUiState.Success)?.movie
                     if (movie != null) {
+                        IconButton(onClick = {
+                            navController.navigate(
+                                Screen.WatchPartyLobby.createRoute(
+                                    movieId = movie.id,
+                                    movieTitle = movie.title,
+                                    moviePoster = movie.posterUrl ?: movie.thumbUrl
+                                )
+                            )
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.LiveTv,
+                                contentDescription = "Xem cùng bạn bè",
+                                tint = NeonCyan
+                            )
+                        }
                         IconButton(onClick = { viewModel.toggleFavorite(movie) }) {
                             Icon(
                                 imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,

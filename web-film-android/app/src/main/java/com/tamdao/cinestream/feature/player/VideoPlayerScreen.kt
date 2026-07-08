@@ -8,7 +8,7 @@ import androidx.annotation.OptIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.PictureInPicture
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -111,7 +111,14 @@ fun ExoPlayerView(
                 androidx.media3.exoplayer.source.DefaultMediaSourceFactory(dataSourceFactory)
             )
             .build().apply {
-                val mediaItem = MediaItem.fromUri(url)
+                val mediaItem = MediaItem.Builder()
+                    .setUri(url)
+                    .apply {
+                        if (url.contains(".m3u8", ignoreCase = true)) {
+                            setMimeType(androidx.media3.common.MimeTypes.APPLICATION_M3U8)
+                        }
+                    }
+                    .build()
                 setMediaItem(mediaItem)
                 prepare()
                 playWhenReady = true
@@ -127,7 +134,15 @@ fun ExoPlayerView(
     }
 
     LaunchedEffect(url) {
-        exoPlayer.setMediaItem(MediaItem.fromUri(url))
+        val mediaItem = MediaItem.Builder()
+            .setUri(url)
+            .apply {
+                if (url.contains(".m3u8", ignoreCase = true)) {
+                    setMimeType(androidx.media3.common.MimeTypes.APPLICATION_M3U8)
+                }
+            }
+            .build()
+        exoPlayer.setMediaItem(mediaItem)
         exoPlayer.prepare()
         exoPlayer.playWhenReady = true
     }
@@ -171,7 +186,7 @@ fun ExoPlayerView(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onBackClick) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = null, tint = Color.White)
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = Color.White)
                 }
                 
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {

@@ -20,6 +20,10 @@ ksp = "2.0.21-1.0.27"
 hiltNavigationCompose = "1.2.0"
 splashScreen = "1.0.1"
 datastore = "1.1.1"
+krossbow = "7.3.0"
+webrtc = "1.1.2"
+
+
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -66,6 +70,18 @@ androidx-media3-exoplayer-hls = { group = "androidx.media3", name = "media3-exop
 androidx-media3-ui = { group = "androidx.media3", name = "media3-ui", version.ref = "media3" }
 androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "splashScreen" }
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
+
+# Krossbow STOMP WebSocket
+krossbow-stomp-core = { group = "org.hildan.krossbow", name = "krossbow-stomp-core", version.ref = "krossbow" }
+krossbow-websocket-okhttp = { group = "org.hildan.krossbow", name = "krossbow-websocket-okhttp", version.ref = "krossbow" }
+
+
+
+# WebRTC Stream Android
+webrtc-android = { group = "io.getstream", name = "stream-webrtc-android", version.ref = "webrtc" }
+webrtc-ui = { group = "io.getstream", name = "stream-webrtc-android-ui", version.ref = "webrtc" }
+
+
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

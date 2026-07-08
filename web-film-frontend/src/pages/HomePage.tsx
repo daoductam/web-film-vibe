@@ -8,7 +8,8 @@ import { movieService } from '../services/movie.service';
 import { useAuthStore } from '../store/authStore';
 
 export const HomePage = () => {
-    const { isAuthenticated } = useAuthStore();
+    const { token } = useAuthStore();
+    const isAuthenticated = !!token;
 
     // Fetch latest movies
     const { data: latestMovies, isLoading: loadingLatest } = useQuery({
