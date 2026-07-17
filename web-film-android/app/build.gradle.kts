@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.google.ksp)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -96,6 +97,10 @@ dependencies {
     // WebRTC
     implementation(libs.webrtc.android)
     implementation(libs.webrtc.ui)
+
+    // Firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
 
 
     testImplementation(libs.junit)

@@ -24,7 +24,8 @@ class MovieRepository @Inject constructor(
     private val apiService: MovieApiService,
     private val authApiService: com.tamdao.cinestream.core.network.AuthApiService,
     private val sessionManager: com.tamdao.cinestream.core.session.SessionManager,
-    private val movieDao: MovieDao
+    private val movieDao: MovieDao,
+    private val topicSubscriptionManager: com.tamdao.cinestream.core.notification.TopicSubscriptionManager
 ) {
     private val TAG = "MovieRepository"
 
@@ -139,6 +140,7 @@ class MovieRepository @Inject constructor(
         val isFav = movieDao.isFavorite(movie.slug).first()
         if (isFav) {
             movieDao.deleteFavorite(movie.slug)
+            topicSubscriptionManager.unsubscribeFromMovie(movie.slug)
             
             // Sync remove to server if logged in
             if (sessionManager.isLoggedIn.first()) {
@@ -150,6 +152,7 @@ class MovieRepository @Inject constructor(
             }
         } else {
             movieDao.insertFavorite(movie.toFavoriteEntity())
+            topicSubscriptionManager.subscribeToMovie(movie.slug)
             
             // Sync add to server if logged in
             if (sessionManager.isLoggedIn.first()) {
@@ -318,6 +321,10 @@ class MovieRepository @Inject constructor(
                             )
                         )
                     }
+                    
+                    // Sync Firebase topic subscriptions
+                    val slugs = remoteFavs.map { it.movieSlug }
+                    topicSubscriptionManager.syncAllFavorites(slugs)
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to refresh favorites: ${e.localizedMessage}")

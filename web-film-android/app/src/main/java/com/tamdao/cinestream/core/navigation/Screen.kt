@@ -59,6 +59,9 @@ sealed class Screen(
         fun createRoute(roomId: Long) = "watch_party_room/$roomId"
     }
     object WatchPartyHistory : Screen("watch_party_history")
+
+    // Notifications
+    object Notifications : Screen("notifications")
 }
 
 val bottomNavItems = listOf(

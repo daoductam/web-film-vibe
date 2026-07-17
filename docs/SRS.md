@@ -32,8 +32,9 @@
   - [3.4. Tương Tác Người Dùng (User Interaction)](#34-tương-tác-người-dùng-user-interaction)
   - [3.5. Tìm Kiếm & Lọc Phim (Search & Filter)](#35-tìm-kiếm--lọc-phim-search--filter)
   - [3.6. Trợ Lý AI Chatbot (AI CineGuru)](#36-trợ-lý-ai-chatbot-ai-cineguru)
-  - [3.7. Quản Trị Hệ Thống (Admin Panel)](#37-quản-trị-hệ-thống-admin-panel)
-  - [3.8. Thu Thập Dữ Liệu Tự Động (Data Crawler)](#38-thu-thập-dữ-liệu-tự-động-data-crawler)
+  - [3.7. Phòng Xem Chung (Watch Party)](#37-phòng-xem-chung-watch-party)
+  - [3.8. Quản Trị Hệ Thống (Admin Panel)](#38-quản-trị-hệ-thống-admin-panel)
+  - [3.9. Thu Thập Dữ Liệu Tự Động (Data Crawler)](#39-thu-thập-dữ-liệu-tự-động-data-crawler)
 - [4. Yêu Cầu Phi Chức Năng](#4-yêu-cầu-phi-chức-năng)
 - [5. Mô Hình Dữ Liệu](#5-mô-hình-dữ-liệu)
   - [5.1. Sơ Đồ ER (Entity-Relationship)](#51-sơ-đồ-er-entity-relationship)
@@ -622,7 +623,58 @@ Hệ thống phục vụ ba nhóm người dùng chính:
 
 ---
 
-### 3.7. Quản Trị Hệ Thống (Admin Panel)
+### 3.7. Phòng Xem Chung (Watch Party)
+
+#### FR-WP-01: Tạo phòng xem chung
+
+| Thuộc tính     | Mô tả                                                               |
+| :------------- | :------------------------------------------------------------------- |
+| **ID**         | FR-WP-01                                                             |
+| **Tên**        | Tạo phòng xem phim chung thời gian thực                             |
+| **Mô tả**     | Người dùng có thể tạo phòng xem chung cho một bộ phim cụ thể, cấu hình chế độ công khai hoặc riêng tư (mã code). |
+| **Đầu vào**   | `movieSlug`, `roomName`, `roomType` (PUBLIC/PRIVATE), `maxMembers`    |
+| **Đầu ra**     | Thông tin phòng xem chung (`WatchRoomDto`), mã phòng `code` (chuỗi 6 chữ số/ký tự) |
+| **Quyền**      | Yêu cầu xác thực                                                    |
+| **Nền tảng**   | Web, Android                                                        |
+
+#### FR-WP-02: Tham gia và Rời phòng xem chung
+
+| Thuộc tính     | Mô tả                                                               |
+| :------------- | :------------------------------------------------------------------- |
+| **ID**         | FR-WP-02                                                             |
+| **Tên**        | Tham gia/Rời phòng xem chung                                        |
+| **Mô tả**     | Người dùng có thể tham gia bằng cách tìm kiếm phòng công khai hoặc nhập mã code (phòng riêng tư). Rời phòng sẽ thông báo đến những người khác. |
+| **Đầu vào**   | Mã phòng `code` (khi tham gia), không đầu vào (khi rời phòng)       |
+| **Ràng buộc**  | Không vượt quá `maxMembers` của phòng. Nếu người cuối cùng rời đi, phòng bị đóng. |
+| **Quyền**      | Yêu cầu xác thực                                                    |
+| **Nền tảng**   | Web, Android                                                        |
+
+#### FR-WP-03: Đồng bộ trạng thái phát phim (Play/Pause/Seek)
+
+| Thuộc tính     | Mô tả                                                               |
+| :------------- | :------------------------------------------------------------------- |
+| **ID**         | FR-WP-03                                                             |
+| **Tên**        | Đồng bộ trạng thái video phát thời gian thực                         |
+| **Mô tả**     | Hành động của Host (Play, Pause, Tua video) sẽ gửi tín hiệu WebSocket đến tất cả thành viên để đồng bộ video đến từng mili-giây. |
+| **Cơ chế**     | WebSocket (STOMP / SockJS), sự kiện đồng bộ `PLAY`, `PAUSE`, `SEEK` |
+| **Độ trễ mục tiêu** | Sai lệch giữa các máy ≤ 500ms                                       |
+| **Quyền**      | Chỉ Host được quyền điều khiển trạng thái phát                      |
+| **Nền tảng**   | Web, Android                                                        |
+
+#### FR-WP-04: Chat trực tiếp & Emoji Reactions
+
+| Thuộc tính     | Mô tả                                                               |
+| :------------- | :------------------------------------------------------------------- |
+| **ID**         | FR-WP-04                                                             |
+| **Tên**        | Nhắn tin và Thả biểu cảm cảm xúc thời gian thực                     |
+| **Mô tả**     | Thành viên trong phòng có thể chat và gửi biểu cảm bay trên màn hình (Floating Emoji Reactions). Hỗ trợ cơ chế ẩn Spoiler (mờ tin nhắn). |
+| **Đầu vào**   | `content` (nội dung chat), `messageType` (CHAT/SPOILER/EMOJI)        |
+| **Quyền**      | Thành viên trong phòng                                              |
+| **Nền tảng**   | Web, Android                                                        |
+
+---
+
+### 3.8. Quản Trị Hệ Thống (Admin Panel)
 
 #### FR-ADMIN-01: Dashboard quản trị
 
@@ -667,7 +719,7 @@ Hệ thống phục vụ ba nhóm người dùng chính:
 
 ---
 
-### 3.8. Thu Thập Dữ Liệu Tự Động (Data Crawler)
+### 3.9. Thu Thập Dữ Liệu Tự Động (Data Crawler)
 
 #### FR-CRAWL-01: Crawler đa nguồn
 

@@ -4,6 +4,7 @@ import com.tamdao.cinestream.data.model.MovieDetailDto
 import com.tamdao.cinestream.data.model.EpisodeDto
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -67,8 +68,10 @@ fun MovieDetailScreen(
     var showDownloadSheet by remember { mutableStateOf(false) }
     val context = androidx.compose.ui.platform.LocalContext.current
     var showOfflineDialog by remember { mutableStateOf(false) }
+    var selectedServerIndex by remember { mutableStateOf(0) }
 
     LaunchedEffect(slug) {
+        selectedServerIndex = 0
         viewModel.loadMovieDetail(slug)
     }
 
@@ -167,8 +170,51 @@ fun MovieDetailScreen(
                             }
                         }
                         
+                        val servers = movie.servers
+                        val currentServer = servers.getOrNull(selectedServerIndex) ?: servers.firstOrNull()
+                        val episodes = currentServer?.episodes ?: emptyList()
+
+                        if (servers.size > 1) {
+                            item {
+                                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                                    Text(text = "Nguồn phát:", color = Color.Gray, fontSize = 14.sp)
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    LazyRow(
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        items(servers.size) { index ->
+                                            val server = servers[index]
+                                            val isSelected = index == selectedServerIndex
+                                            Box(
+                                                modifier = Modifier
+                                                    .background(
+                                                        color = if (isSelected) NeonCyan.copy(alpha = 0.2f) else Color.White.copy(alpha = 0.05f),
+                                                        shape = RoundedCornerShape(20.dp)
+                                                    )
+                                                    .border(
+                                                        width = 1.dp,
+                                                        color = if (isSelected) NeonCyan else Color.Transparent,
+                                                        shape = RoundedCornerShape(20.dp)
+                                                    )
+                                                    .clickable { selectedServerIndex = index }
+                                                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                                            ) {
+                                                Text(
+                                                    text = server.serverName,
+                                                    color = if (isSelected) NeonCyan else Color.White,
+                                                    fontSize = 13.sp,
+                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                                )
+                                            }
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                }
+                            }
+                        }
+
                         item {
-                            val episodes = movie.servers.firstOrNull()?.episodes ?: emptyList()
                             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                                 episodes.chunked(4).forEach { rowEps ->
                                     Row(
@@ -257,7 +303,7 @@ fun MovieDetailScreen(
                         item {
                             Spacer(modifier = Modifier.height(24.dp))
                             // We still use currentEpisode for context when posting new comments
-                            val firstEpisodeSlug = movie.servers.firstOrNull()?.episodes?.firstOrNull()?.slug ?: ""
+                            val firstEpisodeSlug = currentServer?.episodes?.firstOrNull()?.slug ?: ""
                             if (movie.slug.isNotEmpty()) {
                                 CommentSection(
                                     comments = comments,
@@ -283,7 +329,9 @@ fun MovieDetailScreen(
 
     if (showDownloadSheet && uiState is MovieDetailUiState.Success) {
         val movie = (uiState as MovieDetailUiState.Success).movie
-        val episodes = movie.servers.firstOrNull()?.episodes ?: emptyList()
+        val servers = movie.servers
+        val currentServer = servers.getOrNull(selectedServerIndex) ?: servers.firstOrNull()
+        val episodes = currentServer?.episodes ?: emptyList()
         val sheetState = rememberModalBottomSheetState()
         
         ModalBottomSheet(

@@ -218,8 +218,12 @@ public class WatchRoomService {
                 .build();
         historyRepository.save(history);
 
-        // If host leaves, end the room
-        if (MemberRole.HOST.equals(member.getRole())) {
+        // End the room if the host leaves, OR if this was the last member still in the room
+        boolean isHost = MemberRole.HOST.equals(member.getRole());
+        int remainingMembers = memberRepository.countByRoomIdAndLeftAtIsNull(roomId);
+        if (isHost || remainingMembers == 0) {
+            log.info("Ending watch room {} — reason: {} left and {} member(s) remain",
+                    roomId, isHost ? "HOST" : "last member", remainingMembers);
             endRoomInternal(room);
         }
     }

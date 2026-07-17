@@ -33,28 +33,38 @@ import com.tamdao.cinestream.core.database.WatchHistoryEntity
 import com.tamdao.cinestream.ui.theme.NeonCyan
 import com.tamdao.cinestream.ui.theme.Obsidian
 
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import com.tamdao.cinestream.feature.ai_chat.AiChatBottomSheet
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.AutoAwesome
+import com.tamdao.cinestream.feature.notification.NotificationViewModel
 
 @Composable
 fun HomeScreen(
     onMovieClick: (String) -> Unit,
     onSeeAllClick: (String, String) -> Unit,
     onSearchClick: () -> Unit,
-    viewModel: HomeViewModel = hiltViewModel()
+    onNotificationClick: () -> Unit,
+    viewModel: HomeViewModel = hiltViewModel(),
+    notificationViewModel: NotificationViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val watchHistory by viewModel.watchHistory.collectAsState()
+    val unreadCount by notificationViewModel.unreadCount.collectAsState()
     var showAiChat by remember { mutableStateOf(false) }
+    
+    LaunchedEffect(Unit) {
+        notificationViewModel.loadUnreadCount()
+    }
 
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         when (val state = uiState) {
             is HomeUiState.Loading -> {
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    item { CineHomeHeader(onSearchClick) }
+                    item { CineHomeHeader(onSearchClick, onNotificationClick, unreadCount) }
                     repeat(3) {
                         item { MovieListShimmer() }
                     }
@@ -69,7 +79,7 @@ fun HomeScreen(
                                 movie = state.heroMovie,
                                 onWatchClick = onMovieClick
                             )
-                            CineHomeHeader(onSearchClick)
+                            CineHomeHeader(onSearchClick, onNotificationClick, unreadCount)
                         }
                     }
 
@@ -170,7 +180,11 @@ fun HomeScreen(
 }
 
 @Composable
-fun CineHomeHeader(onSearchClick: () -> Unit) {
+fun CineHomeHeader(
+    onSearchClick: () -> Unit,
+    onNotificationClick: () -> Unit,
+    unreadCount: Long
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -225,20 +239,54 @@ fun CineHomeHeader(onSearchClick: () -> Unit) {
                 )
             }
 
-            IconButton(
-                onClick = onSearchClick,
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.1f))
-                    .border(1.dp, Color.White.copy(alpha = 0.15f), CircleShape)
+            Row(
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = "Tìm kiếm",
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp)
-                )
+                // Nút thông báo
+                IconButton(
+                    onClick = onNotificationClick,
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.1f))
+                        .border(1.dp, Color.White.copy(alpha = 0.15f), CircleShape)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = "Thông báo",
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        if (unreadCount > 0) {
+                            Box(
+                                modifier = Modifier
+                                    .size(10.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.Red)
+                                    .align(Alignment.TopEnd)
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+
+                // Nút tìm kiếm
+                IconButton(
+                    onClick = onSearchClick,
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.1f))
+                        .border(1.dp, Color.White.copy(alpha = 0.15f), CircleShape)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Tìm kiếm",
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
         }
     }

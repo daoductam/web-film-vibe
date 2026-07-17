@@ -89,4 +89,10 @@ object NetworkModule {
     fun provideWatchPartyApiService(retrofit: Retrofit): WatchPartyApiService {
         return retrofit.create(WatchPartyApiService::class.java)
     }
+
+    @Provides
+    @Singleton
+    fun provideNotificationApiService(retrofit: Retrofit): NotificationApiService {
+        return retrofit.create(NotificationApiService::class.java)
+    }
 }

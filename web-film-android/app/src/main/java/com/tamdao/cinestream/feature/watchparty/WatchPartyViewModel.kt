@@ -320,6 +320,12 @@ class WatchPartyViewModel @Inject constructor(
         }
     }
 
+    /** Returns true if the current user is the last remaining person in the room. */
+    fun isLastMemberInRoom(): Boolean {
+        val state = _roomState.value
+        return state is WatchPartyRoomUiState.Success && state.room.currentMemberCount <= 1
+    }
+
     fun leaveRoom() {
         val roomId = activeRoomId ?: return
         viewModelScope.launch {

@@ -45,7 +45,23 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="cinestream" android:host="watch-party" android:pathPrefix="/room" />
             </intent-filter>
+
+            <!-- Deep Link for Movie Details -->
+            <intent-filter android:label="Movie Details">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="cinestream" android:host="movie" />
+            </intent-filter>
         </activity>
+
+        <service
+            android:name=".core.notification.CineFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
 
         <service
             android:name=".core.download.CineDownloadService"

@@ -68,7 +68,7 @@ app:
     ophim-base-url: ${OPHIM_BASE_URL:https://ophim1.com}
     nguonc-base-url: ${NGUONC_BASE_URL:https://phim.nguonc.com/api}
     kkphim-base-url: ${KKPHIM_BASE_URL:https://phimapi.com}
-    schedule-cron: ${CRAWLER_CRON:0 0 */6 * * *}
+    schedule-cron: ${CRAWLER_CRON:0 */1 * * * *}
     enabled: ${CRAWLER_ENABLED:true}
   cache:
     ttl-minutes: ${CACHE_TTL:10}
@@ -83,6 +83,10 @@ app:
     api-url: ${GROQ_API_URL:https://api.groq.com/openai/v1/chat/completions}
     api-key: ${GROQ_API_KEY:}
     model: ${GROQ_MODEL:llama-3.3-70b-versatile}
+  firebase:
+    service-account-path: ${FIREBASE_SERVICE_ACCOUNT_PATH:classpath:firebase-service-account.json}
+  notification:
+    redis-dedup-ttl-hours: 24
 
 # Logging
 logging:

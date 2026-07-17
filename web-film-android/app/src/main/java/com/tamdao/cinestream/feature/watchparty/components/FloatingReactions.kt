@@ -1,16 +1,27 @@
 package com.tamdao.cinestream.feature.watchparty.components
 
-import androidx.compose.animation.core.*
+import androidx.compose.animation.core.withInfiniteAnimationFrameMillis
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import com.tamdao.cinestream.feature.watchparty.WatchPartyViewModel
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.isActive
 import kotlin.random.Random
+
+// Total flight duration for each emoji particle (milliseconds)
+private const val REACTION_DURATION_MS = 1200L
+
+// Stable data holder: progress is a Compose State so Canvas recomposes on change
+class ReactionAnimation(
+    val emoji: String,
+    val startX: Float,
+    val size: Int
+) {
+    var progress by mutableStateOf(0f)
+}
 
 @Composable
 fun FloatingReactions(
@@ -20,68 +31,63 @@ fun FloatingReactions(
     val newReaction by viewModel.newReaction.collectAsState()
     val reactions = remember { mutableStateListOf<ReactionAnimation>() }
 
-    // Listen for new incoming reactions to spawn animations
+    // Spawn a new particle whenever a reaction arrives
     LaunchedEffect(newReaction) {
         val react = newReaction ?: return@LaunchedEffect
         reactions.add(
             ReactionAnimation(
                 emoji = react.emoji,
-                startX = Random.nextFloat(), // Percent of screen width (0f to 1f)
+                startX = Random.nextFloat(),
                 size = Random.nextInt(40, 80)
             )
         )
     }
 
-    if (reactions.isNotEmpty()) {
-        val transition = rememberInfiniteTransition()
-        val time by transition.animateFloat(
-            initialValue = 0f,
-            targetValue = 1f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(16, easing = LinearEasing)
-            )
-        )
+    // Game-loop coroutine synced to Vsync via withInfiniteAnimationFrameMillis.
+    // Delta-time ensures emoji always completes flight in exactly REACTION_DURATION_MS,
+    // regardless of device frame rate or Compose recompose frequency.
+    LaunchedEffect(Unit) {
+        var lastFrameMs = withInfiniteAnimationFrameMillis { it }
+        while (isActive) {
+            val frameMs = withInfiniteAnimationFrameMillis { it }
+            val deltaMs = (frameMs - lastFrameMs).coerceAtMost(64L)
+            lastFrameMs = frameMs
 
-        Canvas(modifier = modifier.fillMaxSize()) {
-            val canvasWidth = size.width
-            val canvasHeight = size.height
-
-            val iterator = reactions.iterator()
-            while (iterator.hasNext()) {
-                val react = iterator.next()
-                
-                // Update y progress, x offset wobble
-                react.progress += 0.01f
-                if (react.progress >= 1f) {
-                    iterator.remove()
-                    continue
+            if (reactions.isNotEmpty()) {
+                val deltaProgress = deltaMs.toFloat() / REACTION_DURATION_MS
+                val toRemove = mutableListOf<ReactionAnimation>()
+                for (react in reactions) {
+                    react.progress += deltaProgress
+                    if (react.progress >= 1f) toRemove.add(react)
                 }
+                reactions.removeAll(toRemove)
+            }
+        }
+    }
 
-                val currentY = canvasHeight - (react.progress * canvasHeight)
-                val drift = kotlin.math.sin(react.progress * 8f) * 50f
-                val currentX = (react.startX * canvasWidth) + drift
-                val alpha = ((1f - react.progress) * 255).toInt().coerceIn(0, 255)
+    Canvas(modifier = modifier.fillMaxSize()) {
+        val canvasWidth = size.width
+        val canvasHeight = size.height
 
-                drawIntoCanvas { canvas ->
-                    val paint = android.graphics.Paint().apply {
-                        textSize = react.size.toFloat()
-                        this.alpha = alpha
-                    }
-                    canvas.nativeCanvas.drawText(
-                        react.emoji,
-                        currentX,
-                        currentY,
-                        paint
-                    )
+        for (react in reactions) {
+            val progress = react.progress
+            val currentY = canvasHeight - (progress * canvasHeight)
+            val drift = kotlin.math.sin(progress * 8f) * 50f
+            val currentX = (react.startX * canvasWidth) + drift
+            val alpha = ((1f - progress) * 255).toInt().coerceIn(0, 255)
+
+            drawIntoCanvas { canvas ->
+                val paint = android.graphics.Paint().apply {
+                    textSize = react.size.toFloat()
+                    this.alpha = alpha
                 }
+                canvas.nativeCanvas.drawText(
+                    react.emoji,
+                    currentX,
+                    currentY,
+                    paint
+                )
             }
         }
     }
 }
-
-class ReactionAnimation(
-    val emoji: String,
-    val startX: Float,
-    val size: Int,
-    var progress: Float = 0f
-)

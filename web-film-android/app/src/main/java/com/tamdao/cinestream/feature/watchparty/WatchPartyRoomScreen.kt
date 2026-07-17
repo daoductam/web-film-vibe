@@ -48,6 +48,9 @@ fun WatchPartyRoomScreen(
     var chatInput by remember { mutableStateOf("") }
     var isSpoilerMessage by remember { mutableStateOf(false) }
     var showInfoDialog by remember { mutableStateOf(false) }
+    var showLastMemberDialog by remember { mutableStateOf(false) }
+
+
 
     LaunchedEffect(roomId) {
         viewModel.enterRoom(roomId)
@@ -82,7 +85,15 @@ fun WatchPartyRoomScreen(
                             }
                         },
                         navigationIcon = {
-                            IconButton(onClick = onLeaveClick) {
+                            IconButton(
+                                onClick = {
+                                    if (viewModel.isLastMemberInRoom()) {
+                                        showLastMemberDialog = true
+                                    } else {
+                                        onLeaveClick()
+                                    }
+                                }
+                            ) {
                                 Icon(Icons.Default.ArrowBack, contentDescription = "Rời phòng", tint = Color.White)
                             }
                         },
@@ -278,6 +289,47 @@ fun WatchPartyRoomScreen(
                                 Text("Host: ${room.host.fullName ?: room.host.username}", color = Color.White)
                                 Text("Loại phòng: ${if (room.roomType == "PUBLIC") "Công khai" else "Riêng tư"}", color = Color.White)
                                 Text("Tối đa thành viên: ${room.maxMembers}", color = Color.White)
+                            }
+                        },
+                        containerColor = Obsidian,
+                        textContentColor = Color.White
+                    )
+                }
+
+                // Last-member exit confirmation dialog
+                if (showLastMemberDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showLastMemberDialog = false },
+                        icon = {
+                            Text("⚠️", fontSize = 32.sp)
+                        },
+                        title = {
+                            Text(
+                                "Đóng phòng xem chung?",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                        },
+                        text = {
+                            Text(
+                                "Bạn là người cuối cùng trong phòng. Nếu rời đi, phòng sẽ bị đóng và xóa vĩnh viễn.",
+                                color = Color.LightGray
+                            )
+                        },
+                        confirmButton = {
+                            Button(
+                                onClick = {
+                                    showLastMemberDialog = false
+                                    onLeaveClick()
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE53935))
+                            ) {
+                                Text("Rời & đóng phòng", color = Color.White, fontWeight = FontWeight.Bold)
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showLastMemberDialog = false }) {
+                                Text("Ở lại", color = NeonCyan)
                             }
                         },
                         containerColor = Obsidian,

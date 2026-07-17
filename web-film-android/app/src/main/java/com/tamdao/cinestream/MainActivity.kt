@@ -28,6 +28,7 @@ import com.tamdao.cinestream.feature.player.VideoPlayerScreen
 import com.tamdao.cinestream.feature.search.SearchScreen
 import com.tamdao.cinestream.feature.profile.*
 import com.tamdao.cinestream.feature.movielist.MovieListScreen
+import com.tamdao.cinestream.feature.notification.NotificationScreen
 import com.tamdao.cinestream.ui.theme.CineStreamTheme
 import com.tamdao.cinestream.ui.theme.Obsidian
 import com.tamdao.cinestream.core.session.SessionManager
@@ -72,6 +73,9 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onSearchClick = {
                                     navController.navigate(Screen.Search.route)
+                                },
+                                onNotificationClick = {
+                                    navController.navigate(Screen.Notifications.route)
                                 }
                             )
                         }
@@ -83,6 +87,17 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onBackClick = {
                                     navController.popBackStack()
+                                }
+                            )
+                        }
+
+                        composable(Screen.Notifications.route) {
+                            NotificationScreen(
+                                onBackClick = {
+                                    navController.popBackStack()
+                                },
+                                onNotificationClick = { slug ->
+                                    navController.navigate(Screen.MovieDetail.createRoute(slug))
                                 }
                             )
                         }
@@ -175,7 +190,12 @@ class MainActivity : ComponentActivity() {
 
                         composable(
                             route = Screen.MovieDetail.route,
-                            arguments = listOf(navArgument("slug") { type = NavType.StringType })
+                            arguments = listOf(navArgument("slug") { type = NavType.StringType }),
+                            deepLinks = listOf(
+                                androidx.navigation.navDeepLink {
+                                    uriPattern = "cinestream://movie/{slug}"
+                                }
+                            )
                         ) { backStackEntry ->
                             val slug = backStackEntry.arguments?.getString("slug") ?: ""
                             MovieDetailScreen(
