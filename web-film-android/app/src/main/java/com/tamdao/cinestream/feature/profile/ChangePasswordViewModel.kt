@@ -4,6 +4,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tamdao.cinestream.core.util.ErrorMapper
 import com.tamdao.cinestream.data.model.ChangePasswordRequest
 import com.tamdao.cinestream.core.network.AuthApiService
 import com.tamdao.cinestream.data.repository.AuthRepository
@@ -71,10 +72,10 @@ class ChangePasswordViewModel @Inject constructor(
                     _newPassword.value = ""
                     _confirmPassword.value = ""
                 } else {
-                    _error.value = response.message ?: "Đổi mật khẩu thất bại"
+                    _error.value = "Đổi mật khẩu thất bại. Vui lòng kiểm tra lại mật khẩu hiện tại."
                 }
             } catch (e: Exception) {
-                _error.value = e.localizedMessage ?: "Lỗi hệ thống"
+                _error.value = ErrorMapper.mapToString(e)
             }
             
             _isLoading.value = false

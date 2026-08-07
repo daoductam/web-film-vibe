@@ -1,0 +1,32 @@
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import type { UserProfile } from '../types';
+
+interface AuthState {
+    token: string | null;
+    refreshToken: string | null;
+    user: UserProfile | null;
+    setAuth: (token: string, refreshToken: string, user: UserProfile) => void;
+    setTokens: (token: string, refreshToken: string) => void;
+    updateUser: (user: Partial<UserProfile>) => void;
+    logout: () => void;
+}
+
+export const useAuthStore = create<AuthState>()(
+    persist(
+        (set) => ({
+            token: null,
+            refreshToken: null,
+            user: null,
+            setAuth: (token, refreshToken, user) => set({ token, refreshToken, user }),
+            setTokens: (token, refreshToken) => set({ token, refreshToken }),
+            updateUser: (updatedUser) => set((state) => ({ 
+                user: state.user ? { ...state.user, ...updatedUser } : null 
+            })),
+            logout: () => set({ token: null, refreshToken: null, user: null }),
+        }),
+        {
+            name: 'auth-storage', // name of item in the storage (must be unique)
+        }
+    )
+);

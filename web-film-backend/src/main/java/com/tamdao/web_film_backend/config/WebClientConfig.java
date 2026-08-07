@@ -1,10 +1,15 @@
 package com.tamdao.web_film_backend.config;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.netty.channel.ChannelOption;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.http.codec.json.Jackson2JsonDecoder;
@@ -20,7 +25,16 @@ import java.util.concurrent.TimeUnit;
 public class WebClientConfig {
 
     @Bean
-    public WebClient webClient() {
+    @Primary
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper()
+                .registerModule(new JavaTimeModule())
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+    }
+
+    @Bean
+    public WebClient webClient(ObjectMapper objectMapper) {
         HttpClient httpClient = HttpClient.create()
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000)
                 .responseTimeout(Duration.ofSeconds(30))
@@ -34,10 +48,10 @@ public class WebClientConfig {
                     configurer.defaultCodecs().maxInMemorySize(16 * 1024 * 1024);
                     // Support text/plain as JSON (some APIs return this)
                     configurer.defaultCodecs().jackson2JsonDecoder(
-                            new Jackson2JsonDecoder(new com.fasterxml.jackson.databind.ObjectMapper(), 
+                            new Jackson2JsonDecoder(objectMapper, 
                                     MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN));
                     configurer.defaultCodecs().jackson2JsonEncoder(
-                            new Jackson2JsonEncoder(new com.fasterxml.jackson.databind.ObjectMapper(),
+                            new Jackson2JsonEncoder(objectMapper,
                                     MediaType.APPLICATION_JSON));
                 })
                 .build();

@@ -2,6 +2,7 @@ package com.tamdao.cinestream.feature.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tamdao.cinestream.core.util.ErrorMapper
 import com.tamdao.cinestream.data.model.MovieDto
 import com.tamdao.cinestream.data.repository.MovieRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -77,10 +78,10 @@ class SearchViewModel @Inject constructor(
                 if (response.success && response.data != null) {
                     _uiState.value = SearchUiState.Success(response.data.content)
                 } else {
-                    _uiState.value = SearchUiState.Error(response.message ?: "Không tìm thấy kết quả")
+                    _uiState.value = SearchUiState.Error("Không tìm thấy kết quả. Vui lòng thử từ khóa khác.")
                 }
             } catch (e: Exception) {
-                _uiState.value = SearchUiState.Error("Lỗi kết nối: ${e.message}")
+                _uiState.value = SearchUiState.Error(ErrorMapper.mapToString(e))
             }
         }
     }

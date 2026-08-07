@@ -3,6 +3,7 @@ package com.tamdao.cinestream.feature.movielist
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tamdao.cinestream.core.util.ErrorMapper
 import com.tamdao.cinestream.data.model.MovieDto
 import com.tamdao.cinestream.data.repository.MovieRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -87,11 +88,11 @@ class MovieListViewModel @Inject constructor(
                     )
                 } else {
                     android.util.Log.e("MovieList", "Error: ${response.message}")
-                    _uiState.value = MovieListUiState.Error(response.message ?: "Lỗi tải phim")
+                    _uiState.value = MovieListUiState.Error("Không thể tải danh sách phim. Vui lòng thử lại.")
                 }
             } catch (e: Exception) {
                 android.util.Log.e("MovieList", "Exception: ${e.message}", e)
-                _uiState.value = MovieListUiState.Error("Lỗi kết nối: ${e.message}")
+                _uiState.value = MovieListUiState.Error(ErrorMapper.mapToString(e))
             }
         }
     }

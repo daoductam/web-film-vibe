@@ -12,6 +12,8 @@ public interface MovieMapper {
 
     @Mapping(target = "status", expression = "java(movie.getStatus() != null ? movie.getStatus().name() : null)")
     @Mapping(target = "type", expression = "java(movie.getType() != null ? movie.getType().name() : null)")
+    @Mapping(target = "averageRating", ignore = true)
+    @Mapping(target = "ratingCount", ignore = true)
     MovieResponse toResponse(Movie movie);
 
     List<MovieResponse> toResponseList(List<Movie> movies);

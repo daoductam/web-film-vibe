@@ -22,6 +22,7 @@ public class FavoriteService {
 
     private final UserFavoriteRepository favoriteRepository;
     private final UserRepository userRepository;
+    private final GraphSyncService graphSyncService;
 
     /**
      * Get all favorites for the authenticated user.
@@ -44,7 +45,10 @@ public class FavoriteService {
 
         // Idempotent: return existing if already favorited
         return favoriteRepository.findByUserIdAndMovieSlug(user.getId(), request.getMovieSlug())
-                .map(this::toResponse)
+                .map(fav -> {
+                    graphSyncService.syncFavoriteEdge(username, request.getMovieSlug(), true);
+                    return toResponse(fav);
+                })
                 .orElseGet(() -> {
                     UserFavorite favorite = UserFavorite.builder()
                             .user(user)
@@ -56,6 +60,7 @@ public class FavoriteService {
                             .build();
                     UserFavorite saved = favoriteRepository.save(favorite);
                     log.info("Favorite added: user={} slug={}", username, request.getMovieSlug());
+                    graphSyncService.syncFavoriteEdge(username, request.getMovieSlug(), true);
                     return toResponse(saved);
                 });
     }
@@ -71,6 +76,7 @@ public class FavoriteService {
         }
         favoriteRepository.deleteByUserIdAndMovieSlug(user.getId(), movieSlug);
         log.info("Favorite removed: user={} slug={}", username, movieSlug);
+        graphSyncService.syncFavoriteEdge(username, movieSlug, false);
     }
 
     /**

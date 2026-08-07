@@ -30,8 +30,8 @@ fun CineBottomBar(navController: NavHostController) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .statusBarsPadding() // Chỉ dành cho background nếu muốn, nhưng thường BottomBar ở dưới
-            .padding(horizontal = 16.dp, vertical = 24.dp)
+            .navigationBarsPadding()
+            .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp)
     ) {
         Surface(
             modifier = Modifier

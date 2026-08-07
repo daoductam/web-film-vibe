@@ -4,6 +4,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tamdao.cinestream.core.util.ErrorMapper
 import com.tamdao.cinestream.data.model.RegisterRequest
 import com.tamdao.cinestream.data.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -75,7 +76,7 @@ class RegisterViewModel @Inject constructor(
             result.onSuccess {
                 _registerSuccess.emit(Unit)
             }.onFailure { e ->
-                _error.value = e.localizedMessage ?: "Đăng ký thất bại"
+                _error.value = ErrorMapper.mapToString(e)
             }
             
             _isLoading.value = false

@@ -10,9 +10,16 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
+import org.springframework.data.jpa.repository.EntityGraph;
+
 @Repository
 public interface MovieRepository extends JpaRepository<Movie, Long> {
 
+    @EntityGraph(attributePaths = {"categories", "countries", "episodes"})
+    @Override
+    Optional<Movie> findById(Long id);
+
+    @EntityGraph(attributePaths = {"categories", "countries", "episodes"})
     Optional<Movie> findBySlug(String slug);
 
     Optional<Movie> findByTmdbId(String tmdbId);
@@ -57,6 +64,32 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
 
     @Query("SELECT m FROM Movie m WHERE LOWER(m.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(m.originTitle) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     Page<Movie> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
+
+    @Query("SELECT DISTINCT m FROM Movie m " +
+            "LEFT JOIN m.categories c " +
+            "LEFT JOIN m.countries ct " +
+            "WHERE (:keyword IS NULL OR :keyword = '' OR " +
+            "LOWER(m.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "LOWER(m.originTitle) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "LOWER(m.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+            "AND (:type IS NULL OR m.type = :type) " +
+            "AND (:categoryCount = 0 OR c.slug IN :categorySlugs) " +
+            "AND (:countrySlug IS NULL OR ct.slug = :countrySlug) " +
+            "AND (:year IS NULL OR m.year = :year) " +
+            "AND (:status IS NULL OR m.status = :status)")
+    Page<Movie> searchByDescriptionKeyword(
+            @Param("keyword") String keyword,
+            @Param("type") com.tamdao.web_film_backend.entity.MovieType type,
+            @Param("categorySlugs") java.util.List<String> categorySlugs,
+            @Param("categoryCount") int categoryCount,
+            @Param("countrySlug") String countrySlug,
+            @Param("year") Integer year,
+            @Param("status") com.tamdao.web_film_backend.entity.MovieStatus status,
+            Pageable pageable);
+
+    @EntityGraph(attributePaths = {"categories"})
+    @Query("SELECT m FROM Movie m")
+    java.util.List<Movie> findAllWithCategories();
 
     boolean existsBySlug(String slug);
 }

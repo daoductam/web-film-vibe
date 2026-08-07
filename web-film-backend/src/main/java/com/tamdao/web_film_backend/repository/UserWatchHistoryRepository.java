@@ -13,4 +13,8 @@ public interface UserWatchHistoryRepository extends JpaRepository<UserWatchHisto
     List<UserWatchHistory> findByUserIdOrderByUpdatedAtDesc(Long userId);
 
     Optional<UserWatchHistory> findByUserIdAndMovieSlug(Long userId, String movieSlug);
+
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"user"})
+    @org.springframework.data.jpa.repository.Query("SELECT h FROM UserWatchHistory h")
+    List<UserWatchHistory> findAllWithUser();
 }

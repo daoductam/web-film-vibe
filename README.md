@@ -1,57 +1,72 @@
-# 🎬 CineStream - Hệ Sinh Thái Xem Phim Hiện Đại
+# 🎬 CineStream - Hệ Sinh Thái Xem Phim Toàn Diện (Full-Stack)
 
-CineStream là một giải pháp xem phim toàn diện (full-stack) được thiết kế để mang lại trải nghiệm xem phim cao cấp trên cả nền tảng Web và Android. Hệ sinh thái bao gồm backend Spring Boot mạnh mẽ, giao diện web React hiệu năng cao và ứng dụng Android gốc (native) được xây dựng bằng Jetpack Compose.
-
----
-
-## 🏗️ Kiến Trúc Kỹ Thuật
-
-CineStream được xây dựng trên kiến trúc mô-đun, phân chia rõ rệt trách nhiệm giữa ba thành phần chính:
-
-### 1. [Backend API](file:///d:/Java%20Study/Projects/web-film/web-film-backend) (Spring Boot)
-Động cơ cốt lõi của CineStream, quản lý lưu trữ dữ liệu, bảo mật và tự động khám phá nội dung.
-- **Thiết kế Microservice**: Kiến trúc RESTful API với Spring Boot 3.4+.
-- **Bảo mật**: Xác thực không trạng thái (stateless) sử dụng **Spring Security** và **JWT**.
-- **Hiệu năng**: Tích hợp bộ nhớ đệm **Redis** để truy xuất siêu dữ liệu phim với tốc độ cao.
-- **Tự động hóa**: Hệ thống **Crawler** tự động thu thập và hợp nhất dữ liệu phim từ các nguồn bên ngoài.
-
-### 2. [Web Frontend](file:///d:/Java%20Study/Projects/web-film/web-film-frontend) (React)
-Ứng dụng web mượt mà, phản hồi nhanh, tập trung vào tốc độ và thẩm mỹ.
-- **Framework**: React 19 với **Vite** để tối ưu hóa quá trình phát triển và build.
-- **Styling**: Sử dụng **Tailwind CSS 4.0** cho thiết kế giao diện hiện đại theo hướng utility-first.
-- **Quản lý trạng thái**: **Zustand** cho trạng thái toàn cục nhẹ nhàng và **TanStack Query** để xử lý trạng thái server hiệu quả.
-- **Trình phát video**: Trình phát **Vidstack** nâng cao hỗ trợ phát trực tuyến HLS.
-
-### 3. [Ứng dụng Mobile](file:///d:/Java%20Study/Projects/web-film/web-film-android) (Android Native)
-Trải nghiệm di động cao cấp dành cho người dùng.
-- **UI Framework**: 100% **Jetpack Compose** với hệ thống thiết kế Material 3.
-- **DI & Persistence**: **Hilt** để tiêm phụ thuộc (dependency injection) và **Room** để lưu trữ dữ liệu cục bộ (phim yêu thích/lịch sử ngoại tuyến).
-- **Video Engine**: **Media3 ExoPlayer** được tối ưu hóa cho phát trực tuyến HLS và kiểm soát phát lại mượt mà.
+CineStream là một hệ sinh thái xem phim cao cấp (full-stack) được thiết kế đồng bộ để mang lại trải nghiệm xem phim mượt mà và hiện đại trên cả nền tảng **Web** và **Android**. Hệ thống được tối ưu hóa từ lõi backend Spring Boot, giao diện web React phong cách Obsidian sang trọng, đến ứng dụng Android Native sử dụng Jetpack Compose.
 
 ---
 
-## 🚀 Tính Năng Cốt Lõi
+## 🏗️ Kiến Trúc Hệ Thống
 
-### 🔍 Khám Phá Nội Dung
-- **Tìm Kiếm Toàn Cầu Nâng Cao**: Tìm kiếm và lọc phim trong thời gian thực.
-- **Lọc Đa Danh Mục**: Lọc động theo thể loại, năm và quốc gia (Hỗ trợ chọn nhiều danh mục cùng lúc).
-- **Crawler Tự Động**: Dịch vụ hợp nhất dữ liệu thông minh giúp thư viện phim luôn cập nhật với thông tin chất lượng cao.
+Hệ sinh thái CineStream chia tách rõ ràng trách nhiệm giữa ba thành phần chính, giao tiếp qua RESTful APIs bảo mật:
 
-### 👤 Trải Nghiệm Người Dùng
-- **Quản Lý Tài Khoản**: Đăng nhập/Đăng ký bảo mật với phiên làm việc JWT.
-- **Cá Nhân Hóa**: Hồ sơ người dùng và ảnh đại diện có thể tùy chỉnh.
-- **Lịch Sử Xem & Yêu Thích**: Đồng bộ hóa lịch sử xem và các phim đã lưu trên tất cả các nền tảng.
-- **UI/UX Cao Cấp**: Chuyển động vi mô mượt mà (Framer Motion) và bố cục tương thích với mọi thiết bị.
+```mermaid
+graph TD
+    A[React Web Client] -->|REST API + JWT| B[Spring Boot Backend]
+    C[Android Native App] -->|REST API + JWT| B[Spring Boot Backend]
+    B -->|JPA| D[(MySQL DB)]
+    B -->|Spring Cache| E[(Redis Cache)]
+    B -->|WebClient| F[External Movie Providers]
+    B -->|Groq Client| G[Groq AI Cloud]
+```
 
-### 📺 Phát Trực Tuyến Chất Lượng Cao
-- **Hỗ Trợ HLS**: Phát trực tuyến HTTP Live Streaming hiệu suất cao, đảm bảo xem mượt mà ngay cả với kết nối mạng yếu.
-- **Tính Năng Trình Phát**: Chọn tập phim, điều khiển tốc độ và điều hướng liền mạch.
+### 1. 🖥️ [Backend API](web-film-backend) (Spring Boot)
+Động cơ cốt lõi của hệ thống, quản lý cơ sở dữ liệu, bảo mật, tối ưu hóa lưu trữ và tích hợp AI.
+- **Framework**: Spring Boot 3.4+ & Java 21.
+- **Bảo mật**: Xác thực phi trạng thái (stateless) qua **Spring Security**, mã hóa mật khẩu bằng BCrypt và cơ chế **JWT với Refresh Token Rotation** (xoay vòng token).
+- **Tối ưu hóa**: Sử dụng **Redis** lưu bộ nhớ đệm (caching) các danh mục phim phổ biến để giảm tải cho MySQL và tăng tốc độ phản hồi API.
+- **Tự động hóa**: Bộ thu thập dữ liệu tự động (**Crawler**) bằng **WebClient** giúp đồng bộ và làm mới dữ liệu phim từ các nguồn bên ngoài.
+- **Kiểm soát**: **Rate Limiting Filter** tự động giới hạn số lượng request từ IP để bảo vệ hệ thống khỏi tấn công DDoS và Spam.
+
+### 2. 🌐 [Web Frontend](web-film-frontend) (React)
+Ứng dụng web mượt mà, phản hồi nhanh, giao diện tối màu Obsidian thời thượng kết hợp hiệu ứng chuyển động cao cấp.
+- **Framework**: React 19, TypeScript, **Vite** tối ưu hóa hiệu năng biên dịch.
+- **Styling**: **Tailwind CSS 4.0** với các biến CSS gốc và khả năng tương thích cao.
+- **Quản lý trạng thái**: Kết hợp **Zustand** (trạng thái toàn cục) và **TanStack Query** (đồng bộ hóa dữ liệu server, tự động làm mới, cache client).
+- **Trình phát video**: Trình phát **Vidstack** tùy biến cao hỗ trợ luồng phát trực tiếp **HLS (HTTP Live Streaming)**.
+
+### 3. 📱 [Ứng dụng Mobile](web-film-android) (Android Native)
+Ứng dụng di động mượt mà, tối ưu hóa phần cứng thiết bị.
+- **UI Framework**: 100% **Jetpack Compose** kết hợp với Material 3 design system mang lại hiệu ứng gợn sóng, shimmer loading mượt mà.
+- **Quản lý phụ thuộc**: **Hilt (Dagger)** tiêm phụ thuộc toàn diện.
+- **Lưu trữ nội bộ**: **Room Database** lưu lịch sử xem phim và danh sách yêu thích hỗ trợ offline.
+- **Trình phát video**: **Media3 ExoPlayer** tối ưu hóa cho phát luồng HLS trực tuyến, tự động chuyển tập, nhớ tiến trình xem.
+
+---
+
+## 🚀 Các Tính Năng Hệ Thống
+
+### 1. 🔍 Khám Phá Nội Dung & Tìm Kiếm
+- **Tìm Kiếm Toàn Cầu Nâng Cao**: Tìm kiếm phim theo tên trong thời gian thực với độ trễ thấp.
+- **Bộ Lọc Đa Danh Mục**: Lọc động kết hợp nhiều điều kiện cùng lúc (thể loại, quốc gia, năm phát hành).
+- **Crawler Tự Động**: Dịch vụ nền tự động thu thập, đồng bộ và cập nhật dữ liệu phim mới nhất từ các nguồn API bên ngoài.
+
+### 2. 👤 Trải Nghiệm Người Dùng (UX/UI)
+- **Đăng Nhập/Đăng Ký**: Cơ chế xác thực an toàn, bảo mật phiên đăng nhập, hỗ trợ thay đổi thông tin cá nhân và cập nhật ảnh đại diện.
+- **Yêu Thích & Lịch Sử**: Đồng bộ hóa danh sách phim yêu thích và lịch sử xem phim (tiến trình xem tập phim) trên mọi nền tảng.
+- **Giao Diện Hiện Đại**: Thiết kế chuẩn Obsidian sang trọng kết hợp màu Neon Cyan nổi bật, hiệu ứng shimmer loading và chuyển cảnh vi mô mượt mà.
+
+### 3. 📺 Phát Trực Tuyến & Tải Xuống
+- **Hỗ Trợ HLS Streaming**: Phát trực tuyến chuẩn HLS (HTTP Live Streaming) hiệu suất cao, tự động điều chỉnh và tải luồng phát mượt mà.
+- **Trình Phát Đa Tính Năng**: Chọn tập phim, tùy chỉnh tốc độ phát lại và điều khiển thông minh (ExoPlayer trên Android & Vidstack trên Web).
+- **📥 Tải Phim Ngoại Tuyến (Chỉ dành cho Android)**: Tải các tập phim về thiết bị qua hệ thống `DownloadManagerWrapper` để xem offline khi không có mạng.
+
+### 4. 🤖 Trợ Lý Trò Chuyện AI (AI Chatbot)
+- Tích hợp trực tiếp **Groq AI SDK** tại Backend, hỗ trợ chatbot thông minh phản hồi nhanh, tư vấn chọn phim và giao tiếp tự nhiên với người dùng ngay trên ứng dụng di động.
 
 ---
 
 ## 🛠️ Chi Tiết Công Nghệ
 
-| Thành phần | Công nghệ sử dụng |
+| Lớp | Công nghệ sử dụng |
 | :--- | :--- |
 | **Backend** | Java 21, Spring Boot, Spring Security, JWT, MySQL, Redis, MapStruct, Swagger |
 | **Frontend** | React 19, TypeScript, Tailwind CSS 4, TanStack Query, Zustand, Framer Motion |
@@ -60,24 +75,24 @@ Trải nghiệm di động cao cấp dành cho người dùng.
 
 ---
 
-## 📂 Cấu Trúc Dự Án
+## 📁 Cấu Trúc Dự Án
 
 ```text
 web-film/
-├── web-film-backend/    # Spring Boot REST API
+├── web-film-backend/    # Spring Boot REST API & Crawlers
 ├── web-film-frontend/   # React (Vite) Web Application
 └── web-film-android/    # Dự án Android Native (Compose)
 ```
 
 ---
 
-## 🏁 Bắt Đầu
+## 🏁 Hướng Dẫn Bắt Đầu Nhanh
 
-Để chạy toàn bộ hệ sinh thái, hãy làm theo hướng dẫn thiết lập trong từng thư mục con:
+Để chạy toàn bộ hệ sinh thái, hãy làm theo hướng dẫn chi tiết trong từng thư mục thành phần:
 
-1. **Backend**: [Hướng dẫn thiết lập Backend](file:///d:/Java%20Study/Projects/web-film/web-film-backend/README.md)
-2. **Frontend**: [Hướng dẫn thiết lập Frontend](file:///d:/Java%20Study/Projects/web-film/web-film-frontend/README.md)
-3. **Android**: Mở thư mục `web-film-android` bằng Android Studio.
+1. **Backend**: [Hướng dẫn thiết lập Backend](web-film-backend/README.md)
+2. **Frontend**: [Hướng dẫn thiết lập Frontend](web-film-frontend/README.md)
+3. **Android**: Mở thư mục `web-film-android` bằng **Android Studio** (Ladybug trở lên) và chạy trên thiết bị ảo/thật.
 
 ---
 

@@ -5,8 +5,12 @@ import { HeroSection } from '../components/movie/HeroSection';
 import { MovieSection } from '../components/movie/MovieSection';
 import { FeaturedCollection } from '../components/movie/FeaturedCollection';
 import { movieService } from '../services/movie.service';
+import { useAuthStore } from '../store/authStore';
 
 export const HomePage = () => {
+    const { token } = useAuthStore();
+    const isAuthenticated = !!token;
+
     // Fetch latest movies
     const { data: latestMovies, isLoading: loadingLatest } = useQuery({
         queryKey: ['movies', 'latest'],
@@ -21,19 +25,15 @@ export const HomePage = () => {
         queryFn: () => movieService.getPopularMovies(0, 10), 
     });
 
-
-    
-    // Add debug/error handling
-    if (loadingLatest || loadingPopular) {
-        return (
-            <div className="min-h-screen bg-obsidian flex items-center justify-center">
-                 <div className="w-12 h-12 border-4 border-neon border-t-transparent rounded-full animate-spin"></div>
-            </div>
-        );
-    }
+    // Fetch personalized recommendations (Neo4j Graph-based)
+    const { data: recommendedMovies, isLoading: loadingRecommended } = useQuery({
+        queryKey: ['movies', 'recommended'],
+        queryFn: () => movieService.getPersonalizedRecommendations(),
+        enabled: isAuthenticated,
+    });
     
     // Check for errors
-    if (!latestMovies && !popularMovies) {
+    if (!loadingLatest && !loadingPopular && !latestMovies && !popularMovies) {
          return (
             <div className="min-h-screen bg-obsidian flex items-center justify-center flex-col gap-4">
                  <h2 className="text-red-500 font-bold text-2xl">Không thể tải dữ liệu</h2>
@@ -48,17 +48,31 @@ export const HomePage = () => {
             <main className="min-h-screen">
                 <HeroSection />
                 
-                <div className="relative z-30 -mt-20 pb-20 space-y-24">
-                    {/* Inject Real Data */}
-                    {latestMovies?.content && (
-                         <MovieSection title="Phim mới cập nhật" movies={latestMovies.content} />
+                <div className="relative z-30 mt-10 md:-mt-20 pb-20 space-y-16 md:space-y-24">
+                    {/* Personalized Recommendations Section */}
+                    {isAuthenticated && recommendedMovies && recommendedMovies.length > 0 && (
+                        <MovieSection 
+                            title="Gợi ý dành riêng cho bạn" 
+                            movies={recommendedMovies} 
+                            isLoading={loadingRecommended} 
+                        />
                     )}
+
+                    {/* Latest Movies Section */}
+                    <MovieSection 
+                        title="Phim mới cập nhật" 
+                        movies={latestMovies?.content} 
+                        isLoading={loadingLatest} 
+                    />
                     
                     <FeaturedCollection />
                     
-                    {popularMovies?.content && (
-                        <MovieSection title="Phổ biến trên CineStream" movies={popularMovies.content} />
-                    )}
+                    {/* Popular Movies Section */}
+                    <MovieSection 
+                        title="Phổ biến trên CineStream" 
+                        movies={popularMovies?.content} 
+                        isLoading={loadingPopular} 
+                    />
                 </div>
             </main>
             <Footer />

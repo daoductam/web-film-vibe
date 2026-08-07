@@ -24,7 +24,8 @@ class MovieRepository @Inject constructor(
     private val apiService: MovieApiService,
     private val authApiService: com.tamdao.cinestream.core.network.AuthApiService,
     private val sessionManager: com.tamdao.cinestream.core.session.SessionManager,
-    private val movieDao: MovieDao
+    private val movieDao: MovieDao,
+    private val topicSubscriptionManager: com.tamdao.cinestream.core.notification.TopicSubscriptionManager
 ) {
     private val TAG = "MovieRepository"
 
@@ -52,13 +53,8 @@ class MovieRepository @Inject constructor(
                 throw Exception(response.message ?: "Lỗi API không xác định")
             }
         } catch (e: HttpException) {
-            val errorMsg = when (e.code()) {
-                403 -> "Lỗi 403: Server từ chối truy cập (Kiểm tra Spring Security)"
-                404 -> "Lỗi 404: Không tìm thấy API"
-                else -> "Lỗi HTTP: ${e.code()}"
-            }
-            Log.e(TAG, errorMsg)
-            throw Exception(errorMsg)
+            Log.e(TAG, "HTTP Error: ${e.code()} - ${e.message()}")
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Network Error: ${e.localizedMessage}")
             // Nếu cache rỗng và network lỗi thì mới ném lỗi
@@ -144,6 +140,7 @@ class MovieRepository @Inject constructor(
         val isFav = movieDao.isFavorite(movie.slug).first()
         if (isFav) {
             movieDao.deleteFavorite(movie.slug)
+            topicSubscriptionManager.unsubscribeFromMovie(movie.slug)
             
             // Sync remove to server if logged in
             if (sessionManager.isLoggedIn.first()) {
@@ -155,6 +152,7 @@ class MovieRepository @Inject constructor(
             }
         } else {
             movieDao.insertFavorite(movie.toFavoriteEntity())
+            topicSubscriptionManager.subscribeToMovie(movie.slug)
             
             // Sync add to server if logged in
             if (sessionManager.isLoggedIn.first()) {
@@ -174,6 +172,127 @@ class MovieRepository @Inject constructor(
             }
         }
     }
+
+    // Offline Mode
+    fun getAllOfflineMovieEntities(): Flow<List<com.tamdao.cinestream.core.database.OfflineMovieEntity>> {
+        return movieDao.getAllOfflineMovies()
+    }
+
+    fun getAllOfflineMovies(): Flow<List<MovieDto>> = movieDao.getAllOfflineMovies().map { list ->
+        list.map { it.toDto() }
+    }
+
+    suspend fun getOfflineMovie(slug: String): com.tamdao.cinestream.core.database.OfflineMovieEntity? {
+        return movieDao.getOfflineMovie(slug)
+    }
+
+    suspend fun getOfflineEpisode(episodeSlug: String): com.tamdao.cinestream.core.database.OfflineEpisodeEntity? {
+        return movieDao.getOfflineEpisode(episodeSlug)
+    }
+
+    suspend fun saveMovieOffline(movie: MovieDetailDto) {
+        val gson = com.google.gson.Gson()
+        val entity = com.tamdao.cinestream.core.database.OfflineMovieEntity(
+            slug = movie.slug,
+            id = movie.id,
+            title = movie.title,
+            thumbUrl = movie.thumbUrl,
+            posterUrl = movie.posterUrl,
+            description = movie.description,
+            quality = movie.quality,
+            duration = movie.duration,
+            director = movie.director,
+            actors = movie.actors,
+            serversJson = gson.toJson(movie.servers)
+        )
+        movieDao.insertOfflineMovie(entity)
+    }
+
+    suspend fun getOfflineMovieDetail(slug: String): MovieDetailDto? {
+        val entity = movieDao.getOfflineMovie(slug) ?: return null
+        val gson = com.google.gson.Gson()
+        val typeToken = object : com.google.gson.reflect.TypeToken<List<com.tamdao.cinestream.data.model.ServerEpisodeGroupDto>>() {}.type
+        val servers: List<com.tamdao.cinestream.data.model.ServerEpisodeGroupDto> = try {
+            gson.fromJson(entity.serversJson, typeToken)
+        } catch (e: Exception) {
+            emptyList()
+        }
+        return MovieDetailDto(
+            id = entity.id,
+            title = entity.title,
+            originTitle = entity.title,
+            slug = entity.slug,
+            thumbUrl = entity.thumbUrl ?: "",
+            posterUrl = entity.posterUrl ?: "",
+            year = 0,
+            description = entity.description,
+            status = null,
+            type = "OFFLINE",
+            viewCount = 0,
+            totalEpisodes = servers.flatMap { it.episodes }.size,
+            currentEpisode = null,
+            quality = entity.quality,
+            language = null,
+            duration = entity.duration,
+            director = entity.director,
+            actors = entity.actors,
+            categories = emptyList(),
+            countries = emptyList(),
+            servers = servers,
+            averageRating = null,
+            ratingCount = null
+        )
+    }
+
+
+    fun getOfflineEpisodesByMovie(movieSlug: String): Flow<List<com.tamdao.cinestream.core.database.OfflineEpisodeEntity>> {
+        return movieDao.getOfflineEpisodesByMovie(movieSlug)
+    }
+
+    fun getAllOfflineEpisodes(): Flow<List<com.tamdao.cinestream.core.database.OfflineEpisodeEntity>> {
+        return movieDao.getAllOfflineEpisodes()
+    }
+
+    fun getOfflineEpisodesFlow(): Flow<List<com.tamdao.cinestream.core.database.OfflineEpisodeEntity>> {
+        return movieDao.getOfflineEpisodesFlow()
+    }
+
+    suspend fun saveEpisodeOffline(episodeSlug: String, movieSlug: String, episodeName: String, videoUrl: String) {
+        val entity = com.tamdao.cinestream.core.database.OfflineEpisodeEntity(
+            episodeSlug = episodeSlug,
+            movieSlug = movieSlug,
+            episodeName = episodeName,
+            videoUrl = videoUrl,
+            downloadStatus = "DOWNLOADING",
+            progress = 0f
+        )
+        movieDao.insertOfflineEpisode(entity)
+    }
+
+    suspend fun updateEpisodeDownloadStatus(episodeSlug: String, status: String, path: String?, progress: Float) {
+        movieDao.updateEpisodeDownloadStatus(episodeSlug, status, path, progress)
+    }
+
+    suspend fun deleteOfflineEpisode(episodeSlug: String) {
+        movieDao.deleteOfflineEpisode(episodeSlug)
+    }
+
+    suspend fun deleteOfflineMovieAndEpisodes(movieSlug: String) {
+        movieDao.deleteOfflineMovie(movieSlug)
+        movieDao.deleteOfflineEpisodesByMovie(movieSlug)
+    }
+
+
+    private fun com.tamdao.cinestream.core.database.OfflineMovieEntity.toDto() = MovieDto(
+        id = id,
+        title = title,
+        slug = slug,
+        thumbUrl = thumbUrl,
+        posterUrl = posterUrl,
+        quality = quality,
+        year = 0, // Not stored in offline entity for now
+        type = "OFFLINE"
+    )
 
     private fun MovieDto.toFavoriteEntity() = FavoriteEntity(
         slug = slug,
@@ -202,6 +321,10 @@ class MovieRepository @Inject constructor(
                             )
                         )
                     }
+                    
+                    // Sync Firebase topic subscriptions
+                    val slugs = remoteFavs.map { it.movieSlug }
+                    topicSubscriptionManager.syncAllFavorites(slugs)
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to refresh favorites: ${e.localizedMessage}")
@@ -277,5 +400,53 @@ class MovieRepository @Inject constructor(
         currentEpisode = null,
         language = null,
         viewCount = 0
+    )
+
+    fun getPersonalizedRecommendations(): Flow<List<MovieDto>> = flow {
+        if (sessionManager.isLoggedIn.first()) {
+            try {
+                val response = authApiService.getPersonalizedRecommendations()
+                val list = response.data.personalizedRecommendations.map { it.toMovieDto() }
+                emit(list)
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                Log.e(TAG, "Failed to get personalized recommendations: ${e.localizedMessage}")
+                emit(emptyList())
+            }
+        } else {
+            emit(emptyList())
+        }
+    }
+
+    fun getSimilarMovies(slug: String): Flow<List<MovieDto>> = flow {
+        try {
+            val response = authApiService.getSimilarMovies(
+                com.tamdao.cinestream.core.network.GraphQLRequest(
+                    query = "query(\$slug: String!) { similarMovies(slug: \$slug) { id title slug posterUrl views rating } }",
+                    variables = mapOf("slug" to slug)
+                )
+            )
+            val list = response.data.similarMovies.map { it.toMovieDto() }
+            emit(list)
+        } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            Log.e(TAG, "Failed to get similar movies: ${e.localizedMessage}")
+            emit(emptyList())
+        }
+    }
+
+    private fun com.tamdao.cinestream.core.network.MovieNodeDto.toMovieDto() = MovieDto(
+        id = id.toLongOrNull() ?: 0L,
+        title = title,
+        originTitle = "",
+        slug = slug,
+        thumbUrl = posterUrl ?: "",
+        posterUrl = posterUrl ?: "",
+        year = 0,
+        type = "MOVIE",
+        quality = "HD",
+        currentEpisode = null,
+        language = null,
+        viewCount = (views ?: 0).toLong()
     )
 }

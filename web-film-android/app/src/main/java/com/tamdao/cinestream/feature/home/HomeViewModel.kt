@@ -5,12 +5,15 @@ import androidx.lifecycle.viewModelScope
 import com.tamdao.cinestream.core.database.WatchHistoryEntity
 import com.tamdao.cinestream.data.model.MovieDto
 import com.tamdao.cinestream.data.repository.MovieRepository
+import com.tamdao.cinestream.core.util.ErrorMapper
+import com.tamdao.cinestream.core.util.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -42,24 +45,25 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             repository.getLatestMovies()
                 .catch { e ->
-                    _uiState.value = HomeUiState.Error("Lỗi kết nối: ${e.message}")
+                    _uiState.value = HomeUiState.Error(ErrorMapper.mapToUiText(e))
                 }
                 .collectLatest { latest ->
                     if (latest.isNotEmpty()) {
-                        // Lấy thêm các danh mục khác song song
                         val series = repository.getMoviesByType("series")
                         val singles = repository.getMoviesByType("single")
                         val hoathinh = repository.getMoviesByType("hoathinh")
+                        val recommended = repository.getPersonalizedRecommendations().first()
 
                         _uiState.value = HomeUiState.Success(
                             heroMovie = latest.first(),
                             latestMovies = latest.drop(1),
                             seriesMovies = series,
                             singleMovies = singles,
-                            animationMovies = hoathinh
+                            animationMovies = hoathinh,
+                            recommendedMovies = recommended
                         )
                     } else {
-                        _uiState.value = HomeUiState.Error("Không có dữ liệu phim.")
+                        _uiState.value = HomeUiState.Error(UiText.DynamicString("Không có dữ liệu phim."))
                     }
                 }
         }
@@ -73,7 +77,8 @@ sealed class HomeUiState {
         val latestMovies: List<MovieDto>,
         val seriesMovies: List<MovieDto> = emptyList(),
         val singleMovies: List<MovieDto> = emptyList(),
-        val animationMovies: List<MovieDto> = emptyList()
+        val animationMovies: List<MovieDto> = emptyList(),
+        val recommendedMovies: List<MovieDto> = emptyList()
     ) : HomeUiState()
-    data class Error(val message: String) : HomeUiState()
+    data class Error(val message: UiText) : HomeUiState()
 }

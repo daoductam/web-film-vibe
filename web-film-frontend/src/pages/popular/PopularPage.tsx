@@ -27,7 +27,7 @@ export const PopularPage = () => {
             country: filters.country || undefined,
             year: filters.year ? parseInt(filters.year) : undefined,
             status: filters.status || undefined,
-            page: 0,
+            page: 1,
             size: 50, 
             sort: sortBy 
         })

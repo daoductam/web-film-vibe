@@ -4,16 +4,26 @@ import { Star } from 'lucide-react';
 
 interface RelatedMoviesProps {
     categorySlug?: string;
+    movieSlug?: string;
 }
 
-export const RelatedMovies = ({ categorySlug }: RelatedMoviesProps) => {
+export const RelatedMovies = ({ categorySlug, movieSlug }: RelatedMoviesProps) => {
     const { data: movies, isLoading } = useQuery({
-        queryKey: ['movies', 'related', categorySlug],
-        queryFn: () => {
-            if (categorySlug) {
-                return movieService.getMoviesByCategory(categorySlug, 0, 5);
+        queryKey: ['movies', 'related', movieSlug, categorySlug],
+        queryFn: async () => {
+            if (movieSlug) {
+                try {
+                    return await movieService.getSimilarMovies(movieSlug);
+                } catch (e) {
+                    console.error("Failed to fetch similar movies from Neo4j", e);
+                }
             }
-            return movieService.getPopularMovies(0, 5);
+            if (categorySlug) {
+                const res = await movieService.getMoviesByCategory(categorySlug, 0, 5);
+                return res.content;
+            }
+            const res = await movieService.getPopularMovies(0, 5);
+            return res.content;
         },
     });
 
@@ -33,11 +43,11 @@ export const RelatedMovies = ({ categorySlug }: RelatedMoviesProps) => {
          );
     }
 
-    if (!movies?.content || movies.content.length === 0) return <p className="text-text-secondary text-sm">Không có phim gợi ý.</p>;
+    if (!movies || movies.length === 0) return <p className="text-text-secondary text-sm">Không có phim gợi ý.</p>;
 
     return (
         <div className="flex flex-col gap-4">
-            {movies.content.map((movie) => (
+            {movies.map((movie) => (
                 <a key={movie.id} href={`/movie/${movie.slug}`} className="flex gap-3 group p-2 rounded-xl hover:bg-white/5 transition-colors cursor-pointer">
                     <div className="w-20 aspect-[2/3] rounded-lg overflow-hidden relative">
                         <img 
@@ -52,7 +62,7 @@ export const RelatedMovies = ({ categorySlug }: RelatedMoviesProps) => {
                         </h4>
                         <p className="text-text-secondary text-xs mt-1">{movie.year} • {movie.quality}</p>
                         <div className="flex items-center gap-1 mt-2 text-neon text-xs font-bold">
-                            <Star className="w-3 h-3 fill-current" /> {movie.rating || 'N/A'}
+                            <Star className="w-3 h-3 fill-current" /> {movie.averageRating?.toFixed(1) || '0.0'}
                         </div>
                     </div>
                 </a>

@@ -38,11 +38,27 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - JWT_SECRET=${JWT_SECRET}
+      - GROQ_API_KEY=${GROQ_API_KEY}
       - SERVER_PORT=8081
     volumes:
       - cinestream_uploads:/app/uploads
     ports:
       - "8081:8081"
+    networks:
+      - cinestream-network
+
+  neo4j:
+    image: neo4j:5.12.0-community
+    container_name: cinestream-neo4j
+    restart: always
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=neo4j/secret@1234
+    volumes:
+      - neo4j_data:/data
+      - neo4j_import:/import
     networks:
       - cinestream-network
 
@@ -53,3 +69,5 @@ networks:
 volumes:
   mysql_data:
   cinestream_uploads:
+  neo4j_data:
+  neo4j_import:

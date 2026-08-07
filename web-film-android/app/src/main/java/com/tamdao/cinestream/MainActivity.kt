@@ -28,12 +28,20 @@ import com.tamdao.cinestream.feature.player.VideoPlayerScreen
 import com.tamdao.cinestream.feature.search.SearchScreen
 import com.tamdao.cinestream.feature.profile.*
 import com.tamdao.cinestream.feature.movielist.MovieListScreen
+import com.tamdao.cinestream.feature.notification.NotificationScreen
 import com.tamdao.cinestream.ui.theme.CineStreamTheme
 import com.tamdao.cinestream.ui.theme.Obsidian
+import com.tamdao.cinestream.core.session.SessionManager
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import javax.inject.Inject
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @Inject
+    lateinit var sessionManager: SessionManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // 1. Cài đặt Splash Screen trước khi gọi super.onCreate
         installSplashScreen()
@@ -42,7 +50,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         
         setContent {
-            CineStreamTheme {
+            val themeMode by sessionManager.themeMode.collectAsState(initial = "SYSTEM")
+            CineStreamTheme(themeMode = themeMode) {
                 val navController = rememberNavController()
 
                 Scaffold(
@@ -64,6 +73,9 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onSearchClick = {
                                     navController.navigate(Screen.Search.route)
+                                },
+                                onNotificationClick = {
+                                    navController.navigate(Screen.Notifications.route)
                                 }
                             )
                         }
@@ -75,6 +87,17 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onBackClick = {
                                     navController.popBackStack()
+                                }
+                            )
+                        }
+
+                        composable(Screen.Notifications.route) {
+                            NotificationScreen(
+                                onBackClick = {
+                                    navController.popBackStack()
+                                },
+                                onNotificationClick = { slug ->
+                                    navController.navigate(Screen.MovieDetail.createRoute(slug))
                                 }
                             )
                         }
@@ -92,7 +115,18 @@ class MainActivity : ComponentActivity() {
                                 onLoginClick = { navController.navigate(Screen.Login.route) },
                                 onRegisterClick = { navController.navigate(Screen.Register.route) },
                                 onEditProfileClick = { navController.navigate(Screen.EditProfile.route) },
-                                onChangePasswordClick = { navController.navigate(Screen.ChangePassword.route) }
+                                onChangePasswordClick = { navController.navigate(Screen.ChangePassword.route) },
+                                onDownloadedMoviesClick = { navController.navigate(Screen.DownloadedMovies.route) },
+                                onWatchPartyHistoryClick = { navController.navigate(Screen.WatchPartyHistory.route) }
+                            )
+                        }
+
+                        composable(Screen.DownloadedMovies.route) {
+                            DownloadedMoviesScreen(
+                                onBackClick = { navController.popBackStack() },
+                                onPlayClick = { movieSlug, epSlug ->
+                                    navController.navigate(Screen.Player.createRoute(movieSlug, epSlug))
+                                }
                             )
                         }
 
@@ -156,7 +190,12 @@ class MainActivity : ComponentActivity() {
 
                         composable(
                             route = Screen.MovieDetail.route,
-                            arguments = listOf(navArgument("slug") { type = NavType.StringType })
+                            arguments = listOf(navArgument("slug") { type = NavType.StringType }),
+                            deepLinks = listOf(
+                                androidx.navigation.navDeepLink {
+                                    uriPattern = "cinestream://movie/{slug}"
+                                }
+                            )
                         ) { backStackEntry ->
                             val slug = backStackEntry.arguments?.getString("slug") ?: ""
                             MovieDetailScreen(
@@ -164,7 +203,11 @@ class MainActivity : ComponentActivity() {
                                 onBackClick = { navController.popBackStack() },
                                 onPlayClick = { movieSlug, epSlug ->
                                     navController.navigate(Screen.Player.createRoute(movieSlug, epSlug))
-                                }
+                                },
+                                onMovieClick = { nextSlug ->
+                                    navController.navigate(Screen.MovieDetail.createRoute(nextSlug))
+                                },
+                                navController = navController
                             )
                         }
 
@@ -183,12 +226,81 @@ class MainActivity : ComponentActivity() {
                                 onBackClick = { navController.popBackStack() }
                             )
                         }
+
+                        composable(
+                            route = Screen.WatchPartyLobby.route,
+                            arguments = listOf(
+                                navArgument("movieId") {
+                                    type = NavType.StringType
+                                    nullable = true
+                                    defaultValue = null
+                                },
+                                navArgument("movieTitle") {
+                                    type = NavType.StringType
+                                    nullable = true
+                                    defaultValue = null
+                                },
+                                navArgument("moviePoster") {
+                                    type = NavType.StringType
+                                    nullable = true
+                                    defaultValue = null
+                                }
+                            )
+                        ) { backStackEntry ->
+                            val movieIdStr = backStackEntry.arguments?.getString("movieId")
+                            val movieTitle = backStackEntry.arguments?.getString("movieTitle")?.let { java.net.URLDecoder.decode(it, "UTF-8") }
+                            val moviePoster = backStackEntry.arguments?.getString("moviePoster")?.let { java.net.URLDecoder.decode(it, "UTF-8") }
+                            
+                            com.tamdao.cinestream.feature.watchparty.WatchPartyLobbyScreen(
+                                onBackClick = { navController.popBackStack() },
+                                onNavigateToRoom = { roomId ->
+                                    navController.navigate(Screen.WatchPartyRoom.createRoute(roomId))
+                                },
+                                preSelectedMovieId = movieIdStr?.toLongOrNull(),
+                                preSelectedMovieTitle = movieTitle,
+                                preSelectedMoviePoster = moviePoster
+                            )
+                        }
+
+                        composable(
+                            route = Screen.WatchPartyRoom.route,
+                            arguments = listOf(navArgument("roomId") { type = NavType.LongType }),
+                            deepLinks = listOf(
+                                androidx.navigation.navDeepLink {
+                                    uriPattern = "cinestream://watch-party/room/{roomId}"
+                                }
+                            )
+                        ) { backStackEntry ->
+                            val roomId = backStackEntry.arguments?.getLong("roomId") ?: 0L
+                            com.tamdao.cinestream.feature.watchparty.WatchPartyRoomScreen(
+                                roomId = roomId,
+                                onLeaveClick = { navController.popBackStack() }
+                            )
+                        }
+
+                        composable(Screen.WatchPartyHistory.route) {
+                            com.tamdao.cinestream.feature.watchparty.WatchPartyHistoryScreen(
+                                onBackClick = { navController.popBackStack() }
+                            )
+                        }
                     }
                 }
             }
         }
     }
 }
+
+//    override fun onUserLeaveHint() {
+//        super.onUserLeaveHint()
+//        // Kiểm tra nếu đang ở màn hình trình phát thì có thể vào PiP
+//        // Lưu ý: Việc kiểm tra chính xác navigation state có thể phức tạp,
+//        // ở đây ta có thể phát ra một tín hiệu hoặc để VideoPlayerScreen tự xử lý.
+//        // Một cách đơn giản là gọi enterPictureInPictureMode() nếu SDK >= 26
+//        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+//            // Chỉ vào PiP nếu đang trong quá trình xem phim (logic này thường được điều khiển bởi PlayerViewModel)
+//        }
+//    }
+
 
 @androidx.compose.runtime.Composable
 fun PlaceholderScreen(title: String, subtitle: String) {

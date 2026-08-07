@@ -1,73 +1,72 @@
-# React + TypeScript + Vite
+# 💻 CineStream Web Frontend (React + TS + Tailwind 4)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Đây là thành phần Web Frontend của hệ sinh thái **CineStream**, mang lại trải nghiệm xem phim chất lượng cao, phản hồi nhanh và giao diện Obsidian & Neon Cyan tối giản, hiện đại.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🛠️ Công Nghệ & Thư Viện Sử Dụng
 
-## React Compiler
+- **Core Framework**: React 19, TypeScript, Vite
+- **Styling**: Tailwind CSS v4.0 (cho hiệu năng render vượt trội và hỗ trợ biến CSS native)
+- **State Management**: 
+  - Zustand (Quản lý state toàn cục nhẹ và hiệu quả)
+  - TanStack Query v5 (Quản lý server state, caching, fetching và synchronization)
+- **Routing**: React Router Dom v7
+- **Video Engine**: Vidstack React v0.6+ (Trình phát video HLS hiện đại, tùy biến cao)
+- **Animations**: Framer Motion & Swiper (cho các hiệu ứng trượt, carousel và chuyển cảnh mượt mà)
+- **Icons**: Lucide React
+- **Form Handling**: React Hook Form kết hợp với Zod Validation
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## ⚙️ Thiết Lập Môi Trường
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+Bạn có thể thay đổi endpoint kết nối API bằng cách cấu hình trong code hoặc thông qua các biến môi trường của Vite:
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+1. Tạo file `.env` tại thư mục gốc của frontend:
+   ```env
+   VITE_API_BASE_URL=http://localhost:8080/api/v1
+   ```
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+---
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 🏁 Hướng Dẫn Khởi Chạy
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Yêu cầu: Đã cài đặt Node.js phiên bản mới nhất (khuyến nghị v18 hoặc v20+).
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+1. Cài đặt các thư viện/phụ thuộc:
+   ```bash
+   npm install
+   ```
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+2. Chạy môi trường phát triển (Local Development):
+   ```bash
+   npm run dev
+   ```
+   Ứng dụng sẽ chạy trên địa chỉ mặc định `http://localhost:5173`.
+
+3. Biên dịch cho môi trường Production:
+   ```bash
+   npm run build
+   ```
+   Bản build tối ưu sẽ được tạo ra trong thư mục `/dist`.
+
+---
+
+## 📁 Cấu Trúc Thư Mục Source Code
+
+```text
+src/
+├── assets/          # Hình ảnh, font và tài nguyên tĩnh
+├── components/      # Các component dùng chung (Button, Input, VideoPlayer...)
+├── context/         # React Contexts
+├── hooks/           # Custom React Hooks
+├── layouts/         # Bố cục giao diện (MainLayout, AuthLayout)
+├── pages/           # Các trang chính (Home, MovieDetail, Search, Profile...)
+├── services/        # Các service gọi API (Axios instance, queries...)
+├── store/           # Zustand stores (Auth store, UI store...)
+├── types/           # Định nghĩa TypeScript interfaces/types
+├── utils/           # Hàm tiện ích dùng chung
+├── App.tsx          # Điểm bắt đầu của React App
+└── main.tsx         # File entry khởi tạo React
 ```

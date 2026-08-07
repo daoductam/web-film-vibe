@@ -20,6 +20,12 @@ ksp = "2.0.21-1.0.27"
 hiltNavigationCompose = "1.2.0"
 splashScreen = "1.0.1"
 datastore = "1.1.1"
+krossbow = "7.3.0"
+webrtc = "1.1.2"
+firebaseBom = "33.1.2"
+googleServices = "4.4.2"
+
+
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -67,6 +73,22 @@ androidx-media3-ui = { group = "androidx.media3", name = "media3-ui", version.re
 androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "splashScreen" }
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
 
+# Krossbow STOMP WebSocket
+krossbow-stomp-core = { group = "org.hildan.krossbow", name = "krossbow-stomp-core", version.ref = "krossbow" }
+krossbow-websocket-okhttp = { group = "org.hildan.krossbow", name = "krossbow-websocket-okhttp", version.ref = "krossbow" }
+
+
+
+# WebRTC Stream Android
+webrtc-android = { group = "io.getstream", name = "stream-webrtc-android", version.ref = "webrtc" }
+webrtc-ui = { group = "io.getstream", name = "stream-webrtc-android-ui", version.ref = "webrtc" }
+
+# Firebase
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
+firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging-ktx" }
+
+
+
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
@@ -74,3 +96,4 @@ kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
 google-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }

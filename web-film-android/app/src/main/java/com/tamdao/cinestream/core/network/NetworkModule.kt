@@ -77,4 +77,22 @@ object NetworkModule {
     fun provideAuthApiService(retrofit: Retrofit): AuthApiService {
         return retrofit.create(AuthApiService::class.java)
     }
+
+    @Provides
+    @Singleton
+    fun provideSocialApiService(retrofit: Retrofit): SocialApiService {
+        return retrofit.create(SocialApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideWatchPartyApiService(retrofit: Retrofit): WatchPartyApiService {
+        return retrofit.create(WatchPartyApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideNotificationApiService(retrofit: Retrofit): NotificationApiService {
+        return retrofit.create(NotificationApiService::class.java)
+    }
 }

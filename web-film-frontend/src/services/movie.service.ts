@@ -28,8 +28,9 @@ export const movieService = {
     },
 
     searchMovies: async (keyword: string, page = 1, size = 24): Promise<PageResponse<Movie>> => {
+        const apiPage = Math.max(0, page - 1);
         const response = await api.get<ApiResponse<PageResponse<Movie>>>('/movies/search', {
-            params: { q: keyword, page: page - 1, size }
+            params: { q: keyword, page: apiPage, size }
         });
         return response.data.data;
     },
@@ -45,8 +46,9 @@ export const movieService = {
         size?: number;
     }): Promise<PageResponse<Movie>> => {
         const { page = 1, size = 24, ...rest } = params;
+        const apiPage = Math.max(0, page - 1);
         const response = await api.get<ApiResponse<PageResponse<Movie>>>('/movies/filter', {
-            params: { ...rest, page: page - 1, size }
+            params: { ...rest, page: apiPage, size }
         });
         return response.data.data;
     },
@@ -54,5 +56,42 @@ export const movieService = {
     getMovieDetail: async (slug: string) => {
          const response = await api.get<ApiResponse<any>>(`/movies/${slug}`);
          return response.data.data;
+    },
+
+    getPersonalizedRecommendations: async (): Promise<Movie[]> => {
+        const query = `
+            query {
+                personalizedRecommendations {
+                    id
+                    title
+                    slug
+                    posterUrl
+                    views
+                    rating
+                }
+            }
+        `;
+        const response = await api.post('/../graphql', { query });
+        return response.data.data.personalizedRecommendations;
+    },
+
+    getSimilarMovies: async (slug: string): Promise<Movie[]> => {
+        const query = `
+            query($slug: String!) {
+                similarMovies(slug: $slug) {
+                    id
+                    title
+                    slug
+                    posterUrl
+                    views
+                    rating
+                }
+            }
+        `;
+        const response = await api.post('/../graphql', { 
+            query, 
+            variables: { slug } 
+        });
+        return response.data.data.similarMovies;
     }
 };

@@ -1,14 +1,16 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRef } from 'react';
 import { MovieCard } from './MovieCard';
+import { MovieCardSkeleton } from './MovieCardSkeleton';
 import type { Movie } from '../../types';
 
 interface MovieSectionProps {
     title: string;
-    movies?: Movie[]; // Optional because data might be loading
+    movies?: Movie[];
+    isLoading?: boolean;
 }
 
-export const MovieSection = ({ title, movies = [] }: MovieSectionProps) => {
+export const MovieSection = ({ title, movies = [], isLoading = false }: MovieSectionProps) => {
     const scrollRef = useRef<HTMLDivElement>(null);
 
     const scroll = (direction: 'left' | 'right') => {
@@ -19,7 +21,7 @@ export const MovieSection = ({ title, movies = [] }: MovieSectionProps) => {
         }
     };
 
-    if (!movies || movies.length === 0) return null;
+    if (!isLoading && (!movies || movies.length === 0)) return null;
 
     return (
         <section className="max-w-[1600px] mx-auto px-4 md:px-6">
@@ -45,9 +47,19 @@ export const MovieSection = ({ title, movies = [] }: MovieSectionProps) => {
                 ref={scrollRef}
                 className="flex gap-6 overflow-x-auto hide-scrollbar pb-20 pt-10 snap-x px-4 -mx-4"
             >
-                {movies.map((movie) => (
-                    <MovieCard key={movie.id} movie={movie} />
-                ))}
+                {isLoading ? (
+                    Array.from({ length: 6 }).map((_, index) => (
+                        <div key={index} className="w-[160px] xs:w-[180px] sm:w-[200px] md:w-[240px] shrink-0 snap-start">
+                            <MovieCardSkeleton />
+                        </div>
+                    ))
+                ) : (
+                    movies.map((movie) => (
+                        <div key={movie.id} className="w-[160px] xs:w-[180px] sm:w-[200px] md:w-[240px] shrink-0 snap-start">
+                            <MovieCard movie={movie} />
+                        </div>
+                    ))
+                )}
             </div>
         </section>
     );

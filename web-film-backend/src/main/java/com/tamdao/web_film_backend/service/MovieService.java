@@ -11,6 +11,8 @@ import com.tamdao.web_film_backend.mapper.EpisodeMapper;
 import com.tamdao.web_film_backend.mapper.MovieMapper;
 import com.tamdao.web_film_backend.repository.EpisodeRepository;
 import com.tamdao.web_film_backend.repository.MovieRepository;
+import com.tamdao.web_film_backend.repository.RatingRepository;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -18,6 +20,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.Cacheable;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -29,6 +32,7 @@ public class MovieService {
 
     private final MovieRepository movieRepository;
     private final EpisodeRepository episodeRepository;
+    private final RatingRepository ratingRepository;
     private final MovieMapper movieMapper;
     private final EpisodeMapper episodeMapper;
     private final CategoryMapper categoryMapper;
@@ -37,26 +41,29 @@ public class MovieService {
     /**
      * Get paginated list of latest movies.
      */
+    @Cacheable(value = "latestMovies", key = "#page + '-' + #size")
     @Transactional(readOnly = true)
     public Page<MovieResponse> getLatestMovies(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return movieRepository.findAllByOrderByUpdatedAtDesc(pageable)
-                .map(movieMapper::toResponse);
+                .map(this::enrichWithRating);
     }
 
     /**
      * Get paginated list of popular movies (by view count).
      */
+    @Cacheable(value = "popularMovies", key = "#page + '-' + #size")
     @Transactional(readOnly = true)
     public Page<MovieResponse> getPopularMovies(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return movieRepository.findAllByOrderByViewCountDesc(pageable)
-                .map(movieMapper::toResponse);
+                .map(this::enrichWithRating);
     }
 
     /**
      * Get movie detail by slug with episodes grouped by server.
      */
+    @Cacheable(value = "movieDetail", key = "#slug")
     @Transactional(readOnly = true)
     public MovieDetailResponse getMovieDetail(String slug) {
         Movie movie = movieRepository.findBySlug(slug)
@@ -66,7 +73,7 @@ public class MovieService {
         List<Episode> episodes = episodeRepository.findByMovieIdOrderByServerNameAscNameAsc(movie.getId());
         List<ServerEpisodeGroup> servers = groupEpisodesByServer(episodes);
 
-        return MovieDetailResponse.builder()
+        MovieDetailResponse response = MovieDetailResponse.builder()
                 .id(movie.getId())
                 .title(movie.getTitle())
                 .originTitle(movie.getOriginTitle())
@@ -89,6 +96,20 @@ public class MovieService {
                 .countries(new ArrayList<>(countryMapper.toResponseSet(movie.getCountries())))
                 .servers(servers)
                 .build();
+
+        Double avg = ratingRepository.getAverageScoreByMovieSlug(movie.getSlug());
+        response.setAverageRating(avg != null ? (double) Math.round(avg * 10) / 10 : 0.0);
+        response.setRatingCount(ratingRepository.countByMovieSlug(movie.getSlug()));
+
+        return response;
+    }
+
+    private MovieResponse enrichWithRating(Movie movie) {
+        MovieResponse response = movieMapper.toResponse(movie);
+        Double avg = ratingRepository.getAverageScoreByMovieSlug(movie.getSlug());
+        response.setAverageRating(avg != null ? (double) Math.round(avg * 10) / 10 : 0.0);
+        response.setRatingCount(ratingRepository.countByMovieSlug(movie.getSlug()));
+        return response;
     }
 
     /**
@@ -118,6 +139,34 @@ public class MovieService {
     public Page<MovieResponse> getMoviesByCountry(String countrySlug, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return movieRepository.findByCountrySlug(countrySlug, pageable)
+                .map(movieMapper::toResponse);
+    }
+
+    /**
+     * Search movies by description keyword with filters.
+     */
+    @Transactional(readOnly = true)
+    public Page<MovieResponse> searchMoviesByDescriptionKeyword(String keyword, String typeStr, java.util.List<String> categorySlugs, String countrySlug, Integer year, String statusStr, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        
+        com.tamdao.web_film_backend.entity.MovieType type = null;
+        if (typeStr != null && !typeStr.isEmpty()) {
+            try {
+                type = com.tamdao.web_film_backend.entity.MovieType.valueOf(typeStr.toUpperCase());
+            } catch (IllegalArgumentException ignored) {}
+        }
+
+        com.tamdao.web_film_backend.entity.MovieStatus status = null;
+        if (statusStr != null && !statusStr.isEmpty()) {
+            try {
+                status = com.tamdao.web_film_backend.entity.MovieStatus.valueOf(statusStr.toUpperCase());
+            } catch (IllegalArgumentException ignored) {}
+        }
+
+        int categoryCount = (categorySlugs == null || categorySlugs.isEmpty()) ? 0 : categorySlugs.size();
+        java.util.List<String> safeCategorySlugs = categoryCount > 0 ? categorySlugs : java.util.Collections.singletonList("EMPTY_PLACEHOLDER");
+
+        return movieRepository.searchByDescriptionKeyword(keyword, type, safeCategorySlugs, categoryCount, countrySlug, year, status, pageable)
                 .map(movieMapper::toResponse);
     }
 

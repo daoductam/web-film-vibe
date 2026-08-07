@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tamdao.cinestream.core.session.SessionManager
+import com.tamdao.cinestream.core.util.ErrorMapper
 import com.tamdao.cinestream.data.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -70,7 +71,7 @@ class EditProfileViewModel @Inject constructor(
             result.onSuccess {
                 _updateSuccess.emit("Cập nhật thông tin thành công")
             }.onFailure { e ->
-                _error.value = e.localizedMessage ?: "Cập nhật thất bại"
+                _error.value = ErrorMapper.mapToString(e)
             }
             
             _isLoading.value = false
@@ -93,10 +94,10 @@ class EditProfileViewModel @Inject constructor(
                     _avatarUrl.value = it.avatarUrl
                     _updateSuccess.emit("Cập nhật ảnh đại diện thành công")
                 }.onFailure { e ->
-                    _error.value = e.localizedMessage ?: "Upload ảnh thất bại"
+                    _error.value = ErrorMapper.mapToString(e)
                 }
             } catch (e: Exception) {
-                _error.value = "Lỗi xử lý file: ${e.localizedMessage}"
+                _error.value = "Không thể xử lý ảnh. Vui lòng chọn ảnh khác."
             }
             
             _isLoading.value = false

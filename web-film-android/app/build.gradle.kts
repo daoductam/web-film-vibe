@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.google.ksp)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -18,6 +19,14 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments += mapOf(
+                    "dagger.hilt.android.internal.disableAndroidSuperclassValidation" to "true"
+                )
+            }
+        }
     }
 
     buildTypes {
@@ -80,6 +89,19 @@ dependencies {
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.exoplayer.hls)
     implementation(libs.androidx.media3.ui)
+
+    // Krossbow STOMP WebSocket
+    implementation(libs.krossbow.stomp.core)
+    implementation(libs.krossbow.websocket.okhttp)
+
+    // WebRTC
+    implementation(libs.webrtc.android)
+    implementation(libs.webrtc.ui)
+
+    // Firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
+
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

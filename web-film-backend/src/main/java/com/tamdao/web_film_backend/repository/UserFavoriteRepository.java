@@ -17,4 +17,11 @@ public interface UserFavoriteRepository extends JpaRepository<UserFavorite, Long
     boolean existsByUserIdAndMovieSlug(Long userId, String movieSlug);
 
     void deleteByUserIdAndMovieSlug(Long userId, String movieSlug);
+
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"user"})
+    @org.springframework.data.jpa.repository.Query("SELECT f FROM UserFavorite f")
+    List<UserFavorite> findAllWithUser();
+
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"user"})
+    List<UserFavorite> findByMovieSlug(String movieSlug);
 }

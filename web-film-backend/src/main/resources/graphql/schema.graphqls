@@ -1,0 +1,13 @@
+type MovieNode {
+  id: ID!
+  title: String!
+  slug: String!
+  posterUrl: String
+  views: Int
+  rating: Float
+}
+
+type Query {
+  personalizedRecommendations: [MovieNode!]!
+  similarMovies(slug: String!): [MovieNode!]!
+}

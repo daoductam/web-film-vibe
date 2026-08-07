@@ -1,5 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { authService } from '../../services/auth.service';
+import { useAuthStore } from '../../store/authStore';
+import { useToast } from '../../components/common/Toast';
 
 export const RegisterPage = () => {
     const [showPassword, setShowPassword] = useState(false);
@@ -8,11 +11,27 @@ export const RegisterPage = () => {
     const [password, setPassword] = useState('');
     const navigate = useNavigate();
 
-    const handleRegister = (e: React.FormEvent) => {
+    const { setAuth, token } = useAuthStore();
+    const { showToast } = useToast();
+
+    // Redirect if already logged in
+    useEffect(() => {
+        if (token) {
+            navigate('/');
+        }
+    }, [token, navigate]);
+
+    const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log('Register with:', { name, email, password });
-        // For demo purposes, go to login after "registering"
-        navigate('/login');
+        try {
+            const data = await authService.register({ username: email.split('@')[0], email, password, fullName: name });
+            setAuth(data.accessToken, data.refreshToken, data.user);
+            showToast('Đăng ký tài khoản thành công!', 'success');
+            navigate('/');
+        } catch (error: any) {
+            console.error('Registration failed:', error);
+            showToast(error.response?.data?.message || 'Đăng ký thất bại. Email có thể đã tồn tại!', 'error');
+        }
     };
 
     return (

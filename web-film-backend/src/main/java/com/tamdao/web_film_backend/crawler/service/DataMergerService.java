@@ -5,6 +5,8 @@ import com.tamdao.web_film_backend.crawler.dto.CrawledMovie;
 import com.tamdao.web_film_backend.crawler.dto.CrawledServer;
 import com.tamdao.web_film_backend.entity.*;
 import com.tamdao.web_film_backend.repository.*;
+import com.tamdao.web_film_backend.service.GraphSyncService;
+import com.tamdao.web_film_backend.dto.event.EpisodeUpdateEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -31,6 +33,9 @@ public class DataMergerService {
     private final EpisodeRepository episodeRepository;
     private final CategoryRepository categoryRepository;
     private final CountryRepository countryRepository;
+    private final GraphSyncService graphSyncService;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
+    private final org.springframework.cache.CacheManager cacheManager;
 
     /**
      * Merge a crawled movie into the database.
@@ -75,11 +80,18 @@ public class DataMergerService {
         }
 
         movie = movieRepository.save(movie);
+        try {
+            graphSyncService.syncMovieNode(movie.getSlug());
+        } catch (Exception e) {
+            log.error("Failed to sync movie node on merge: " + movie.getSlug(), e);
+        }
 
         // Merge episodes
         if (crawled.getServers() != null) {
             mergeEpisodes(movie, crawled.getServers(), source);
         }
+
+        evictMovieCaches(movie.getSlug());
 
         return movie;
     }
@@ -211,6 +223,15 @@ public class DataMergerService {
                             .build();
                     episodeRepository.save(episode);
                     log.debug("Added episode {} - {} from {}", server.getServerName(), crawledEp.getName(), source);
+                    
+                    // Publish event to notify users about the new episode
+                    eventPublisher.publishEvent(new EpisodeUpdateEvent(
+                            this,
+                            movie.getSlug(),
+                            movie.getTitle(),
+                            crawledEp.getName(),
+                            movie.getThumbUrl()
+                    ));
                 }
             }
         }
@@ -276,5 +297,30 @@ public class DataMergerService {
             case "single", "movie", "phim lẻ" -> MovieType.SINGLE;
             default -> MovieType.SINGLE;
         };
+    }
+
+    private void evictMovieCaches(String slug) {
+        if (cacheManager != null) {
+            try {
+                // Evict detail cache for this specific movie
+                org.springframework.cache.Cache movieDetailCache = cacheManager.getCache("movieDetail");
+                if (movieDetailCache != null) {
+                    movieDetailCache.evict(slug);
+                }
+                
+                // Clear paginated lists because of ordering/updates changes
+                org.springframework.cache.Cache latestMoviesCache = cacheManager.getCache("latestMovies");
+                if (latestMoviesCache != null) {
+                    latestMoviesCache.clear();
+                }
+                org.springframework.cache.Cache popularMoviesCache = cacheManager.getCache("popularMovies");
+                if (popularMoviesCache != null) {
+                    popularMoviesCache.clear();
+                }
+                log.info("Successfully evicted caches for movie: {}", slug);
+            } catch (Exception e) {
+                log.error("Failed to evict caches for movie: {}", slug, e);
+            }
+        }
     }
 }

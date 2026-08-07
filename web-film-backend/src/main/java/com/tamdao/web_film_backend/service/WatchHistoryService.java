@@ -22,6 +22,7 @@ public class WatchHistoryService {
 
     private final UserWatchHistoryRepository historyRepository;
     private final UserRepository userRepository;
+    private final GraphSyncService graphSyncService;
 
     /**
      * Get watch history for the authenticated user (most recent first).
@@ -58,6 +59,7 @@ public class WatchHistoryService {
 
         UserWatchHistory saved = historyRepository.save(history);
         log.info("Watch history saved: user={} movie={}", username, request.getMovieSlug());
+        graphSyncService.syncWatchHistoryEdge(username, request.getMovieSlug());
         return toResponse(saved);
     }
 
