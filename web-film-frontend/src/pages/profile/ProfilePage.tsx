@@ -1,15 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { FavoritesTab } from './FavoritesTab';
 import { HistoryTab } from './HistoryTab';
 import { SettingsTab } from './SettingsTab';
-import { useNavigate } from 'react-router-dom';
+import { WatchPartyHistoryTab } from './WatchPartyHistoryTab';
+import { userService } from '../../services/user.service';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+
+type ProfileTab = 'favorites' | 'history' | 'party-history' | 'settings';
 
 export const ProfilePage = () => {
     const { user, token } = useAuthStore();
-    const [activeTab, setActiveTab] = useState<'favorites' | 'history' | 'settings'>('favorites');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const requestedTab = searchParams.get('tab');
+    const activeTab: ProfileTab = requestedTab === 'history' || requestedTab === 'party-history' || requestedTab === 'settings' ? requestedTab : 'favorites';
+    const setActiveTab = (tab: ProfileTab) => setSearchParams({ tab });
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -33,7 +40,7 @@ export const ProfilePage = () => {
                         <div className="glass-card rounded-2xl p-6 text-center space-y-4">
                             <div className="size-24 rounded-full mx-auto bg-white/10 border-2 border-neon overflow-hidden">
                                 {user.avatarUrl ? (
-                                    <img src={`http://localhost:8081/api/v1/users/avatars/${user.avatarUrl}`} alt={user.fullName} className="w-full h-full object-cover" />
+                                    <img src={userService.getAvatarUrl(user.avatarUrl)} alt={user.fullName} className="w-full h-full object-cover" />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-gray-500">
                                         {user.fullName?.charAt(0) || user.username.charAt(0)}
@@ -46,6 +53,10 @@ export const ProfilePage = () => {
                             </div>
 
                             <div className="flex flex-col gap-2 pt-4 border-t border-white/10 text-left">
+                                <button onClick={() => setActiveTab('party-history')}
+                                    className={`px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'party-history' ? 'bg-neon text-obsidian' : 'text-gray-300 hover:bg-white/10'}`}>
+                                    Lịch sử xem chung
+                                </button>
                                 <button 
                                     onClick={() => setActiveTab('favorites')}
                                     className={`px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'favorites' ? 'bg-neon text-obsidian' : 'text-gray-300 hover:bg-white/10'}`}
@@ -74,6 +85,7 @@ export const ProfilePage = () => {
                             {activeTab === 'favorites' && <FavoritesTab />}
                             {activeTab === 'history' && <HistoryTab />}
                             {activeTab === 'settings' && <SettingsTab />}
+                            {activeTab === 'party-history' && <WatchPartyHistoryTab />}
                         </div>
                     </div>
                 </div>

@@ -2,6 +2,15 @@ import api from './api';
 import type { ApiResponse, UpdateProfileRequest, UserProfile } from '../types';
 
 export const userService = {
+    getAvatarUrl: (avatarUrl?: string): string | undefined => {
+        if (!avatarUrl) return undefined;
+        if (/^https?:\/\//i.test(avatarUrl)) return avatarUrl;
+        return `${api.defaults.baseURL?.replace(/\/$/, '')}/users/avatars/${encodeURIComponent(avatarUrl)}`;
+    },
+
+    changePassword: async (request: { currentPassword: string; newPassword: string; confirmPassword: string }): Promise<void> => {
+        await api.put('/users/me/password', request);
+    },
     getProfile: async (): Promise<UserProfile> => {
         const response = await api.get<ApiResponse<UserProfile>>('/users/me');
         return response.data.data;

@@ -182,7 +182,7 @@ export const PopularPage = () => {
                         </div>
                     ) : (
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-8">
-                            {movies.map((movie: any, index: number) => (
+                            {movies.map((movie, index: number) => (
                                 <Link 
                                     key={movie.id} 
                                     to={`/movie/${movie.slug}`} 

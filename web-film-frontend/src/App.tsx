@@ -17,6 +17,7 @@ import { SearchPage } from './pages/search/SearchPage';
 import { ToastProvider } from './components/common/Toast';
 import { WatchPartyLobbyPage } from './pages/watchparty/WatchPartyLobbyPage';
 import { WatchPartyRoomPage } from './pages/watchparty/WatchPartyRoomPage';
+import { NotificationsPage } from './pages/notifications/NotificationsPage';
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/series" element={<SeriesPage />} />
         <Route path="/movies" element={<SingleMoviePage />} />
         <Route path="/popular" element={<PopularPage />} />

@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Star } from 'lucide-react';
 import { socialService } from '../../services/social.service';
 import { useAuthStore } from '../../store/authStore';
-import { useToast } from '../common/Toast';
+import { useToast } from '../../hooks/useToast';
 import { useNavigate } from 'react-router-dom';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -39,13 +39,7 @@ const RatingStars: React.FC<RatingStarsProps> = ({
     const { showToast } = useToast();
     const navigate = useNavigate();
 
-    useEffect(() => {
-        if (initialAverage === undefined || initialCount === undefined) {
-            fetchRating();
-        }
-    }, [movieSlug]);
-
-    const fetchRating = async () => {
+    const fetchRating = useCallback(async () => {
         try {
             const response = await socialService.getMovieRating(movieSlug);
             if (response.success) {
@@ -56,7 +50,9 @@ const RatingStars: React.FC<RatingStarsProps> = ({
         } catch (error) {
             console.error('Failed to fetch rating:', error);
         }
-    };
+    }, [movieSlug]);
+
+    useEffect(() => { void fetchRating(); }, [fetchRating, token]);
 
     const handleRate = async (score: number) => {
         if (!interactive || loading) return;

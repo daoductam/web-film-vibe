@@ -46,9 +46,3 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         </>
     );
 };
-
-// Export useToast as a proxy to useToastStore.showToast for backward compatibility
-export const useToast = () => {
-    const showToast = useToastStore(state => state.showToast);
-    return { showToast };
-};

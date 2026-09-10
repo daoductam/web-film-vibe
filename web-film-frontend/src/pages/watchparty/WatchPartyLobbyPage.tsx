@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { watchPartyService } from '../../services/watchParty.service';
 import type { WatchRoom } from '../../services/watchParty.service';
 import { useAuthStore } from '../../store/authStore';
-import { useToast } from '../../components/common/Toast';
+import { useToast } from '../../hooks/useToast';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { Plus, Users, Lock, Globe } from 'lucide-react';
+import { movieService } from '../../services/movie.service';
+import type { Movie, MovieDetail, Episode } from '../../types';
 
 export const WatchPartyLobbyPage = () => {
   const [rooms, setRooms] = useState<WatchRoom[]>([]);
@@ -14,30 +16,65 @@ export const WatchPartyLobbyPage = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [joinCode, setJoinCode] = useState('');
   const [roomName, setRoomName] = useState('');
-  const [movieId, setMovieId] = useState('');
+  const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
+  const [keyword, setKeyword] = useState('');
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [episodes, setEpisodes] = useState<Episode[]>([]);
+  const [episodeId, setEpisodeId] = useState('');
+  const [busy, setBusy] = useState(false);
   const [roomType, setRoomType] = useState<'PUBLIC' | 'PRIVATE'>('PUBLIC');
   const [maxMembers, setMaxMembers] = useState(10);
   
   const { token } = useAuthStore();
   const { showToast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const movieSlug = searchParams.get('movie');
 
   useEffect(() => {
-    fetchPublicRooms();
-  }, []);
+    let active = true;
+    if (movieSlug) void (movieService.getMovieDetail(movieSlug) as Promise<MovieDetail>).then(movie => {
+      if (!active) return;
+      setSelectedMovie(movie);
+      setKeyword(movie.title);
+      setRoomName(`Cùng xem ${movie.title}`);
+      setShowCreateModal(true);
+    }).catch(() => { if (active) showToast('Không thể tải phim đã chọn', 'error'); });
+    return () => { active = false; };
+  }, [movieSlug, showToast]);
 
-  const fetchPublicRooms = async () => {
-    try {
-      setLoading(true);
-      const data = await watchPartyService.getPublicRooms();
-      setRooms(data.content || []);
-    } catch (err) {
-      console.error(err);
-      showToast('Không thể lấy danh sách phòng công khai', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    let active = true;
+    const timer = setTimeout(async () => {
+      if (!showCreateModal) return;
+      try {
+        const data = keyword.trim() ? await movieService.searchMovies(keyword.trim(), 1, 12) : await movieService.getLatestMovies(0, 12);
+        if (active) setMovies(data.content);
+      } catch { if (active) showToast('Không thể tìm phim', 'error'); }
+    }, 300);
+    return () => { active = false; clearTimeout(timer); };
+  }, [keyword, showCreateModal, showToast]);
+
+  useEffect(() => {
+    let active = true;
+    setEpisodes([]);
+    setEpisodeId('');
+    if (selectedMovie) void (movieService.getMovieDetail(selectedMovie.slug) as Promise<MovieDetail>).then(detail => {
+      if (!active) return;
+      const available = detail.servers.flatMap(server => server.episodes).filter(episode => episode.linkM3u8);
+      setEpisodes(available);
+      setEpisodeId(available[0] ? String(available[0].id) : '');
+    }).catch(() => { if (active) showToast('Không thể tải tập phim', 'error'); });
+    return () => { active = false; };
+  }, [selectedMovie, showToast]);
+
+  useEffect(() => {
+    let active = true;
+    void watchPartyService.getPublicRooms().then(data => { if (active) setRooms(data.content); })
+      .catch(() => { if (active) showToast('Không thể lấy danh sách phòng công khai', 'error'); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [showToast]);
 
   const handleCreateRoom = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,16 +83,18 @@ export const WatchPartyLobbyPage = () => {
       navigate('/login');
       return;
     }
-    const moviePk = parseInt(movieId);
-    if (!roomName || isNaN(moviePk)) {
+    if (busy) return;
+    if (!roomName.trim() || !selectedMovie || !episodeId || !Number.isInteger(maxMembers) || maxMembers < 2 || maxMembers > 50) {
       showToast('Vui lòng điền đầy đủ thông tin phòng', 'warning');
       return;
     }
 
     try {
+      setBusy(true);
       const room = await watchPartyService.createRoom({
-        name: roomName,
-        movieId: moviePk,
+        name: roomName.trim(),
+        movieId: selectedMovie.id,
+        episodeId: Number(episodeId),
         roomType,
         maxMembers
       });
@@ -64,7 +103,7 @@ export const WatchPartyLobbyPage = () => {
     } catch (err) {
       console.error(err);
       showToast('Tạo phòng xem chung thất bại', 'error');
-    }
+    } finally { setBusy(false); }
   };
 
   const handleJoinByCode = async (e: React.FormEvent) => {
@@ -74,17 +113,17 @@ export const WatchPartyLobbyPage = () => {
       navigate('/login');
       return;
     }
-    if (!joinCode) return;
+    if (!joinCode.trim() || busy) return;
 
     try {
+      setBusy(true);
       const room = await watchPartyService.getRoomByCode(joinCode.trim().toUpperCase());
-      await watchPartyService.joinRoom(room.id);
       showToast('Vào phòng xem chung thành công!', 'success');
       navigate(`/watch-party/room/${room.id}`);
     } catch (err) {
       console.error(err);
       showToast('Không tìm thấy phòng phù hợp hoặc phòng đã đầy', 'error');
-    }
+    } finally { setBusy(false); }
   };
 
   return (
@@ -98,7 +137,7 @@ export const WatchPartyLobbyPage = () => {
               Watch Party
             </h1>
             <p className="text-text-secondary text-sm md:text-base mt-2">
-              Xem phim trực tuyến cùng bạn bè trong thời gian thực, trò chuyện và voice chat.
+              Xem phim trực tuyến cùng bạn bè trong thời gian thực, trò chuyện và thả cảm xúc.
             </p>
           </div>
           <button 
@@ -195,7 +234,7 @@ export const WatchPartyLobbyPage = () => {
       {/* Creation Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-surface border border-white/10 rounded-2xl max-w-md w-full p-6 space-y-4 animate-in zoom-in-95">
+          <div className="bg-surface border border-white/10 rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6 space-y-4 animate-in zoom-in-95">
             <h3 className="text-xl font-bold text-white">Tạo phòng Watch Party mới</h3>
             <form onSubmit={handleCreateRoom} className="space-y-4">
               <div>
@@ -209,14 +248,17 @@ export const WatchPartyLobbyPage = () => {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-400 mb-1">Mã phim (ID)</label>
-                <input 
-                  type="number" 
-                  required
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-neon text-white"
-                  value={movieId}
-                  onChange={(e) => setMovieId(e.target.value)}
-                />
+                <label htmlFor="party-movie-search" className="block text-xs font-bold text-gray-400 mb-1">Tìm phim</label>
+                <input id="party-movie-search" value={keyword} onChange={event => setKeyword(event.target.value)} placeholder="Nhập tên phim…" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm" />
+                <div className="max-h-36 overflow-y-auto mt-2 space-y-1">
+                  {movies.map(movie => <button key={movie.id} type="button" onClick={() => setSelectedMovie(movie)} className={`block w-full text-left px-3 py-2 rounded-lg text-sm ${selectedMovie?.id === movie.id ? 'bg-neon text-black' : 'bg-white/5'}`}>{movie.title} ({movie.year})</button>)}
+                </div>
+                {selectedMovie && <p className="text-neon text-sm mt-2">Đã chọn: {selectedMovie.title}</p>}
+                <label htmlFor="party-episode" className="block text-xs font-bold text-gray-400 mt-3 mb-1">Tập phim / máy chủ</label>
+                <select id="party-episode" required value={episodeId} onChange={event => setEpisodeId(event.target.value)} className="w-full bg-obsidian border border-white/10 rounded-xl px-4 py-2 text-sm">
+                  <option value="">{selectedMovie ? 'Chọn tập phim có nguồn HLS' : 'Chọn phim trước'}</option>
+                  {episodes.map(episode => <option key={episode.id} value={episode.id}>{episode.name} · {episode.serverName}</option>)}
+                </select>
               </div>
               <div className="flex gap-4">
                 <div className="flex-1">
@@ -224,7 +266,7 @@ export const WatchPartyLobbyPage = () => {
                   <select 
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-neon text-white"
                     value={roomType}
-                    onChange={(e) => setRoomType(e.target.value as any)}
+                    onChange={(e) => setRoomType(e.target.value as 'PUBLIC' | 'PRIVATE')}
                   >
                     <option value="PUBLIC" className="bg-obsidian">Công khai</option>
                     <option value="PRIVATE" className="bg-obsidian">Riêng tư</option>
@@ -252,6 +294,7 @@ export const WatchPartyLobbyPage = () => {
                 </button>
                 <button 
                   type="submit"
+                  disabled={busy}
                   className="flex-1 py-3 rounded-xl bg-neon text-obsidian font-bold text-sm hover:bg-white transition-all shadow-neon"
                 >
                   Tạo phòng

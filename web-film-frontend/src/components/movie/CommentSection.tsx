@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { isAxiosError } from 'axios';
+import React, { useState, useEffect, useCallback } from 'react';
 import { MessageSquare, Send } from 'lucide-react';
 import type { Comment } from '../../types';
 import { socialService } from '../../services/social.service';
 import CommentItem from './CommentItem';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useToast } from '../common/Toast';
+import { useToast } from '../../hooks/useToast';
 
 interface CommentSectionProps {
     movieSlug: string;
@@ -20,19 +21,15 @@ const CommentSection: React.FC<CommentSectionProps> = ({ movieSlug, episodeSlug 
     const [hasMore, setHasMore] = useState(false);
     const [totalComments, setTotalComments] = useState(0);
 
-    useEffect(() => {
-        fetchComments(0, true);
-    }, [movieSlug]);
-
-    const fetchComments = async (pageNum: number, refresh = false) => {
+    const fetchComments = useCallback(async (pageNum: number, refresh = false) => {
         setLoading(true);
         try {
             const response = await socialService.getCommentsByMovie(movieSlug, pageNum);
             if (response.success) {
                 const newComments = response.data.content;
                 setComments(prev => refresh ? newComments : [...prev, ...newComments]);
-                setHasMore(response.data.page ? response.data.page.number < response.data.page.totalPages - 1 : false);
-                setTotalComments(response.data.page ? response.data.page.totalElements : 0);
+                setHasMore(pageNum + 1 < (response.data.page?.totalPages ?? response.data.totalPages ?? 0));
+                setTotalComments(response.data.page?.totalElements ?? response.data.totalElements ?? 0);
                 setPage(pageNum);
             }
         } catch (error) {
@@ -40,7 +37,9 @@ const CommentSection: React.FC<CommentSectionProps> = ({ movieSlug, episodeSlug 
         } finally {
             setLoading(false);
         }
-    };
+    }, [movieSlug]);
+
+    useEffect(() => { void fetchComments(0, true); }, [fetchComments]);
 
     const { showToast } = useToast();
 
@@ -61,9 +60,9 @@ const CommentSection: React.FC<CommentSectionProps> = ({ movieSlug, episodeSlug 
                 setTotalComments(prev => prev + 1);
                 showToast('Đã đăng bình luận!', 'success');
             }
-        } catch (error: any) {
+        } catch (error) {
             console.error('Failed to add comment:', error);
-            showToast(error.response?.status === 401 ? 'Vui lòng đăng nhập để bình luận!' : 'Không thể gửi bình luận', 'error');
+            showToast(isAxiosError(error) && error.response?.status === 401 ? 'Vui lòng đăng nhập để bình luận!' : 'Không thể gửi bình luận', 'error');
         } finally {
             setIsSubmitting(false);
         }

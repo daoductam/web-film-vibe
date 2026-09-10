@@ -1,3 +1,4 @@
+import { isAxiosError } from 'axios';
 import React, { useState } from 'react';
 import { ThumbsUp, Reply, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import type { Comment } from '../../types';
@@ -7,7 +8,7 @@ import { vi } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { useToast } from '../common/Toast';
+import { useToast } from '../../hooks/useToast';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -69,9 +70,9 @@ const CommentItem: React.FC<CommentItemProps> = ({
                 setIsReplying(false);
                 showToast('Đã đăng phản hồi!', 'success');
             }
-        } catch (error: any) {
+        } catch (error) {
             console.error('Failed to reply:', error);
-            showToast(error.response?.status === 401 ? 'Vui lòng đăng nhập để phản hồi!' : 'Không thể gửi phản hồi', 'error');
+            showToast(isAxiosError(error) && error.response?.status === 401 ? 'Vui lòng đăng nhập để phản hồi!' : 'Không thể gửi phản hồi', 'error');
         } finally {
             setIsSubmitting(false);
         }

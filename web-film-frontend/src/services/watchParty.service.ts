@@ -1,4 +1,5 @@
 import api from './api';
+import type { PageResponse } from '../types';
 
 export interface UserSummary {
   id: number;
@@ -94,7 +95,7 @@ export const watchPartyService = {
 
   getPublicRooms: async (page = 0, size = 10) => {
     const res = await api.get(`/watch-rooms/public?page=${page}&size=${size}`);
-    return res.data.data;
+    return res.data.data as PageResponse<WatchRoom>;
   },
 
   getRoomById: async (id: number) => {
@@ -103,7 +104,7 @@ export const watchPartyService = {
   },
 
   getRoomByCode: async (code: string) => {
-    const res = await api.get(`/watch-rooms/code/${code}`);
+    const res = await api.get(`/watch-rooms/code/${encodeURIComponent(code)}`);
     return res.data.data as WatchRoom;
   },
 
@@ -131,7 +132,7 @@ export const watchPartyService = {
 
   getMessages: async (id: number, page = 0, size = 50) => {
     const res = await api.get(`/watch-rooms/${id}/messages?page=${page}&size=${size}`);
-    return res.data.data;
+    return res.data.data as PageResponse<ChatMessage>;
   },
 
   getWatchPartyHistory: async (page = 0, size = 10) => {

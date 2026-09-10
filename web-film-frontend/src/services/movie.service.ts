@@ -1,5 +1,5 @@
 import api from './api';
-import type { Movie, PageResponse, ApiResponse } from '../types';
+import type { Movie, MovieDetail, PageResponse, ApiResponse } from '../types';
 
 export const movieService = {
     getAllMovies: async (page = 0, size = 10) => {
@@ -54,7 +54,7 @@ export const movieService = {
     },
     
     getMovieDetail: async (slug: string) => {
-         const response = await api.get<ApiResponse<any>>(`/movies/${slug}`);
+         const response = await api.get<ApiResponse<MovieDetail>>(`/movies/${encodeURIComponent(slug)}`);
          return response.data.data;
     },
 

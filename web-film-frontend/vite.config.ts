@@ -5,6 +5,8 @@ import path from 'path'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  // SockJS references Node's global alias in its browser crypto implementation.
+  define: { global: 'globalThis' },
   plugins: [
     react(),
     tailwindcss(),

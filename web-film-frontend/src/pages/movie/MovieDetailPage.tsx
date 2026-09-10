@@ -1,54 +1,82 @@
-import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { useState, useEffect } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState, useRef } from 'react';
+import type { Episode } from '../../types';
+import { StreamingPlayer } from '../../components/player/StreamingPlayer';
+import type { PlaybackProgress } from '../../components/player/StreamingPlayer';
 import { movieService } from '../../services/movie.service';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
-import { Play, Share2, Download, Heart, MonitorPlay } from 'lucide-react';
+import { Play, Share2, Heart, MonitorPlay, Users } from 'lucide-react';
 import { RelatedMovies } from './RelatedMovies';
 import RatingStars from '../../components/movie/RatingStars';
 import CommentSection from '../../components/movie/CommentSection';
 import { useAuthStore } from '../../store/authStore';
 import { personalizationService } from '../../services/personalization.service';
-import { useToast } from '../../components/common/Toast';
+import { useToast } from '../../hooks/useToast';
 import { MovieDetailSkeleton } from '../../components/movie/MovieDetailSkeleton';
 
 export const MovieDetailPage = () => {
     const { slug } = useParams<{ slug: string }>();
+    return <MovieDetailContent key={slug} slug={slug} />;
+};
+
+const MovieDetailContent = ({ slug }: { slug?: string }) => {
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const queryClient = useQueryClient();
     const { showToast } = useToast();
 
     // Fetch movie detail
-    const { data: movie, isLoading } = useQuery({
+    const { data: movie, isLoading, refetch } = useQuery({
         queryKey: ['movie', slug],
         queryFn: () => movieService.getMovieDetail(slug || ''),
         enabled: !!slug,
     });
 
     const [isPlaying, setIsPlaying] = useState(false);
-    const [selectedEpisode, setSelectedEpisode] = useState<any>(null);
-    const [isFavorite, setIsFavorite] = useState(false);
+    const [chosenEpisode, setChosenEpisode] = useState<Episode | null>(null);
+    const [autoNext, setAutoNext] = useState(true);
     const [isSavingFav, setIsSavingFav] = useState(false);
-    const { token } = useAuthStore();
+    const { token, user } = useAuthStore();
+    const lastSaved = useRef(0);
+    const saveQueue = useRef<Promise<unknown>>(Promise.resolve());
+    const { data: favorites } = useQuery({ queryKey: ['favorites', user?.id], queryFn: personalizationService.getFavorites, enabled: !!token });
+    const { data: history, isLoading: loadingHistory } = useQuery({ queryKey: ['history', user?.id], queryFn: personalizationService.getHistory, enabled: !!token });
+    const savedHistory = history?.find(item => item.movieSlug === slug);
+    const allEpisodes = movie?.servers?.flatMap(server => server.episodes) ?? [];
+    const selectedEpisode = chosenEpisode ?? allEpisodes.find(episode => episode.slug === (searchParams.get('episode') || savedHistory?.lastEpisodeSlug)) ?? allEpisodes[0];
+    const isFavorite = !!token && !!favorites?.some(item => item.movieSlug === slug);
+    const resumeTime = selectedEpisode?.slug === savedHistory?.lastEpisodeSlug ? (savedHistory?.progressMs ?? 0) / 1000 : 0;
+    const currentServer = movie?.servers?.find(server => server.episodes.some(episode => episode.id === selectedEpisode?.id));
+    const nextEpisode = currentServer?.episodes[(currentServer.episodes.findIndex(episode => episode.id === selectedEpisode?.id) ?? -1) + 1];
 
-    // Flatten episodes from all servers for easier access (or prefer first server)
-    const allEpisodes = movie?.servers?.flatMap((s:any) => s.episodes) || [];
+    const selectEpisode = (episode: Episode) => {
+        if (loadingHistory) return;
+        setChosenEpisode(episode);
+        setSearchParams({ episode: episode.slug }, { replace: true });
+        setIsPlaying(true);
+        lastSaved.current = 0;
+        if (!episode.linkM3u8 && episode.linkEmbed) void saveProgress({ currentTime: episode.slug === savedHistory?.lastEpisodeSlug ? resumeTime : 0, duration: 0 }, true, episode);
+    };
 
-    // Reset state when movie changes
-    useEffect(() => {
-        if (allEpisodes.length > 0) {
-            setSelectedEpisode(allEpisodes[0]);
-        }
-    }, [movie]);
-
-    // Check if favorite initially
-    useEffect(() => {
-        if (token && movie?.slug) {
-            personalizationService.getFavorites().then(favs => {
-                setIsFavorite(favs.some(f => f.movieSlug === movie.slug));
-            }).catch(console.error);
-        }
-    }, [token, movie?.slug]);
+    const saveProgress = async ({ currentTime, duration }: PlaybackProgress, force = false, episode = selectedEpisode) => {
+        if (!token || !movie || !episode || (!force && Date.now() - lastSaved.current < 10000)) return;
+        // A player can finish unmounting after logout or account switching.
+        if (useAuthStore.getState().user?.id !== user?.id) return;
+        lastSaved.current = Date.now();
+        saveQueue.current = saveQueue.current.catch(() => undefined).then(async () => {
+          if (useAuthStore.getState().user?.id !== user?.id) return;
+          try {
+            await personalizationService.saveHistory({ movieSlug: movie.slug, title: movie.title,
+                thumbUrl: movie.thumbUrl || movie.posterUrl, lastEpisodeSlug: episode.slug,
+                lastEpisodeName: episode.name, progressMs: Math.round(currentTime * 1000), durationMs: Math.round(duration * 1000) });
+            void queryClient.invalidateQueries({ queryKey: ['history'] });
+        } catch {
+            if (force) showToast('Chưa lưu được tiến độ xem. Vui lòng kiểm tra kết nối.', 'warning');
+          }
+        });
+    };
 
     const handleToggleFavorite = async () => {
         if (!token) {
@@ -62,7 +90,6 @@ export const MovieDetailPage = () => {
         try {
             if (isFavorite) {
                 await personalizationService.removeFavorite(movie.slug);
-                setIsFavorite(false);
                 showToast('Đã xóa khỏi danh sách yêu thích', 'info');
             } else {
                 await personalizationService.addFavorite({ 
@@ -73,9 +100,9 @@ export const MovieDetailPage = () => {
                     year: movie.year,
                     createdAt: new Date().toISOString() 
                 });
-                setIsFavorite(true);
                 showToast('Đã thêm vào danh sách yêu thích!', 'success');
             }
+            await queryClient.invalidateQueries({ queryKey: ['favorites'] });
         } catch (error) {
             console.error('Lỗi khi cập nhật yêu thích', error);
             showToast('Không thể cập nhật danh sách yêu thích', 'error');
@@ -88,22 +115,15 @@ export const MovieDetailPage = () => {
          return <MovieDetailSkeleton />;
     }
 
-    if (!movie) return <div className="text-white text-center pt-40">Film not found</div>;
+    if (!movie) return <div className="min-h-screen bg-obsidian text-white text-center pt-40"><Navbar /><p>Không thể tải phim.</p><button className="mt-4 text-neon" onClick={() => void refetch()}>Thử lại</button></div>;
 
     const handlePlay = () => {
-        if (selectedEpisode?.linkEmbed) {
+        if (selectedEpisode?.linkM3u8 || selectedEpisode?.linkEmbed) {
+            setChosenEpisode(selectedEpisode);
             setIsPlaying(true);
-            // Save watch history automatically
-            if (token && movie?.slug && selectedEpisode.slug) {
-                personalizationService.saveHistory({
-                    movieSlug: movie.slug,
-                    episodeSlug: selectedEpisode.slug,
-                    progressMs: 0,
-                    durationMs: 0
-                }).catch(console.error);
-            }
+            if (!selectedEpisode.linkM3u8) void saveProgress({ currentTime: resumeTime, duration: (savedHistory?.durationMs ?? 0) / 1000 }, true);
         } else {
-            alert("Phim này chưa có link server!");
+            showToast('Tập phim này chưa có nguồn phát.', 'info');
         }
     };
 
@@ -157,13 +177,17 @@ export const MovieDetailPage = () => {
                                     <span className="text-text-secondary">|</span>
                                     <span className="px-2 py-0.5 rounded border border-white/20 text-xs font-bold bg-white/5 text-gray-300">{movie.quality}</span>
                                     <span className="text-text-secondary">|</span>
-                                    <span className="text-gray-300">{movie.categories?.map((c: any) => c.name).join(', ')}</span>
+                                    <span className="text-gray-300">{movie.categories?.map(c => c.name).join(', ')}</span>
                                 </div>
                             </div>
 
                             {/* Video Player Area */}
                             <div className="w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-white/10 relative group">
-                                {isPlaying && selectedEpisode?.linkEmbed ? (
+                                {isPlaying && selectedEpisode?.linkM3u8 ? (
+                                    <StreamingPlayer key={`${user?.id}-${selectedEpisode.id}`} src={selectedEpisode.linkM3u8} title={`${movie.title} - ${selectedEpisode.name}`}
+                                        startTime={resumeTime} onProgress={saveProgress}
+                                        onEnded={() => { if (autoNext && nextEpisode) selectEpisode(nextEpisode); }} />
+                                ) : isPlaying && selectedEpisode?.linkEmbed ? (
                                     <iframe 
                                         src={selectedEpisode.linkEmbed} 
                                         className="w-full h-full" 
@@ -180,6 +204,8 @@ export const MovieDetailPage = () => {
                                         <div className="absolute inset-0 flex items-center justify-center">
                                             <button 
                                                 onClick={handlePlay}
+                                                disabled={loadingHistory}
+                                                aria-label={resumeTime > 0 ? 'Tiếp tục xem phim' : 'Phát phim'}
                                                 className="size-20 md:size-24 bg-neon hover:bg-white text-obsidian rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-[0_0_30px_rgba(0,243,255,0.4)] group-hover:shadow-[0_0_50px_rgba(255,255,255,0.6)] z-20"
                                             >
                                                 <Play className="w-10 h-10 ml-1 fill-current" />
@@ -193,21 +219,20 @@ export const MovieDetailPage = () => {
                             <div className="flex flex-col gap-4 bg-white/5 border border-white/5 rounded-xl p-4 backdrop-blur-md">
                                 <div className="flex items-center justify-between">
                                     <span className="text-xs md:text-sm font-bold text-gray-400">Chọn Server & Tập:</span>
-                                    <button className="text-[10px] md:text-sm text-red-400 hover:text-red-300 flex items-center gap-1 font-medium">
-                                        <span className="material-symbols-outlined text-xs md:text-base">report</span> Báo lỗi
-                                    </button>
+                                    <label className="flex items-center gap-2 text-sm text-gray-300"><input type="checkbox" checked={autoNext} onChange={event => setAutoNext(event.target.checked)} />Tự chuyển tập</label>
                                 </div>
                                 
                                 <div className="space-y-4">
                                 {movie.servers && movie.servers.length > 0 ? (
-                                    movie.servers.map((server: any) => (
+                                    movie.servers.map(server => (
                                         <div key={server.serverName} className="space-y-2">
                                             <h4 className="text-neon text-[10px] md:text-xs font-bold uppercase tracking-wider">{server.serverName}</h4>
                                             <div className="flex flex-wrap gap-2">
-                                                {server.episodes.map((ep: any) => (
+                                                {server.episodes.map(ep => (
                                                     <button 
                                                         key={ep.id}
-                                                        onClick={() => { setSelectedEpisode(ep); setIsPlaying(true); }}
+                                                        disabled={loadingHistory}
+                                                        onClick={() => selectEpisode(ep)}
                                                         className={`px-3 py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all ${selectedEpisode?.id === ep.id ? 'bg-neon text-obsidian shadow-neon-sm' : 'bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white'}`}
                                                     >
                                                         {ep.name}
@@ -230,12 +255,9 @@ export const MovieDetailPage = () => {
                                         <span className="w-1 h-6 bg-neon rounded-full"></span>
                                         Nội dung phim
                                     </h2>
-                                    <div 
-                                        className="text-gray-300 leading-relaxed text-lg font-light"
-                                        dangerouslySetInnerHTML={{ __html: movie.description }}
-                                    />
+                                    <p className="text-gray-300 leading-relaxed text-lg font-light whitespace-pre-line">{new DOMParser().parseFromString(movie.description || '', 'text/html').body.textContent}</p>
                                     <div className="flex flex-wrap gap-2 pt-2">
-                                        {movie.categories?.map((cat: any) => (
+                                        {movie.categories?.map(cat => (
                                             <span key={cat.id} className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-text-secondary hover:text-neon cursor-pointer transition-colors">
                                                 {cat.name}
                                             </span>
@@ -298,11 +320,16 @@ export const MovieDetailPage = () => {
                                 <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
                                 <span>{isFavorite ? 'Đã yêu thích' : 'Yêu thích'}</span>
                             </button>
-                                <button className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-white/10 text-white font-bold hover:bg-neon hover:text-obsidian transition-all group">
-                                    <Download className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                                    Tải xuống
+                                <button onClick={() => navigate(`/watch-party?movie=${encodeURIComponent(movie.slug)}`)} className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-white/10 text-white font-bold hover:bg-neon hover:text-obsidian transition-all group">
+                                    <Users className="w-5 h-5" />
+                                    Xem cùng bạn bè
                                 </button>
-                                <button className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-white/10 text-white font-bold hover:bg-neon hover:text-obsidian transition-all group">
+                                <button onClick={async () => {
+                                    try {
+                                        if (navigator.share) await navigator.share({ title: movie.title, url: window.location.href });
+                                        else { await navigator.clipboard.writeText(window.location.href); showToast('Đã sao chép liên kết phim!', 'success'); }
+                                    } catch (error) { if (!(error instanceof DOMException && error.name === 'AbortError')) showToast('Không thể chia sẻ liên kết.', 'error'); }
+                                }} className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-white/10 text-white font-bold hover:bg-neon hover:text-obsidian transition-all group">
                                     <Share2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
                                     Chia sẻ
                                 </button>

@@ -58,7 +58,7 @@ export const AIChatWidget = () => {
                     movies: response.movies?.content || []
                 }
             ]);
-        } catch (error) {
+        } catch {
             setExpression('sad');
             setHistory([
                 ...newHistory, 

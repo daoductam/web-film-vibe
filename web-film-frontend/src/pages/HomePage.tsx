@@ -6,9 +6,10 @@ import { MovieSection } from '../components/movie/MovieSection';
 import { FeaturedCollection } from '../components/movie/FeaturedCollection';
 import { movieService } from '../services/movie.service';
 import { useAuthStore } from '../store/authStore';
+import { ContinueWatching } from '../components/movie/ContinueWatching';
 
 export const HomePage = () => {
-    const { token } = useAuthStore();
+    const { token, user } = useAuthStore();
     const isAuthenticated = !!token;
 
     // Fetch latest movies
@@ -27,7 +28,7 @@ export const HomePage = () => {
 
     // Fetch personalized recommendations (Neo4j Graph-based)
     const { data: recommendedMovies, isLoading: loadingRecommended } = useQuery({
-        queryKey: ['movies', 'recommended'],
+        queryKey: ['movies', 'recommended', user?.id],
         queryFn: () => movieService.getPersonalizedRecommendations(),
         enabled: isAuthenticated,
     });
@@ -37,7 +38,8 @@ export const HomePage = () => {
          return (
             <div className="min-h-screen bg-obsidian flex items-center justify-center flex-col gap-4">
                  <h2 className="text-red-500 font-bold text-2xl">Không thể tải dữ liệu</h2>
-                 <p className="text-gray-400">Vui lòng kiểm tra kết nối Server (http://localhost:8080/api/v1).</p>
+                 <p className="text-gray-400">Vui lòng kiểm tra kết nối và thử lại.</p>
+                 <button onClick={() => window.location.reload()} className="text-neon">Thử lại</button>
             </div>
         );
     }
@@ -49,6 +51,7 @@ export const HomePage = () => {
                 <HeroSection />
                 
                 <div className="relative z-30 mt-10 md:-mt-20 pb-20 space-y-16 md:space-y-24">
+                    <ContinueWatching />
                     {/* Personalized Recommendations Section */}
                     {isAuthenticated && recommendedMovies && recommendedMovies.length > 0 && (
                         <MovieSection 

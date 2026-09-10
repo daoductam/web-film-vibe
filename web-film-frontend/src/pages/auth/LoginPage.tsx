@@ -1,8 +1,9 @@
+import { isAxiosError } from 'axios';
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../../services/auth.service';
 import { useAuthStore } from '../../store/authStore';
-import { useToast } from '../../components/common/Toast';
+import { useToast } from '../../hooks/useToast';
 
 export const LoginPage = () => {
     const [showPassword, setShowPassword] = useState(false);
@@ -27,9 +28,9 @@ export const LoginPage = () => {
             setAuth(data.accessToken, data.refreshToken, data.user);
             showToast('Đăng nhập thành công! Chào mừng bạn trở lại.', 'success');
             navigate('/');
-        } catch (error: any) {
+        } catch (error) {
             console.error('Login failed:', error);
-            showToast(error.response?.data?.message || 'Email hoặc mật khẩu không chính xác!', 'error');
+            showToast((isAxiosError(error) ? error.response?.data?.message : undefined) || 'Email hoặc mật khẩu không chính xác!', 'error');
         }
     };
 

@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Menu, X, Play, User, LogOut } from 'lucide-react';
+import { Search, Menu, X, Play, User, LogOut, Bell } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuthStore } from '../../store/authStore';
+import { useUnreadNotifications } from '../../hooks/useUnreadNotifications';
+import { userService } from '../../services/user.service';
 
 export const Navbar = () => {
     const [scrolled, setScrolled] = useState(false);
@@ -12,6 +14,7 @@ export const Navbar = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const navigate = useNavigate();
     const { user, logout } = useAuthStore();
+    const { data: unreadCount = 0 } = useUnreadNotifications();
 
     useEffect(() => {
         const handleScroll = () => {
@@ -107,6 +110,11 @@ export const Navbar = () => {
                             <Search size={22} />
                         </button>
 
+                        {user && <Link to="/notifications" aria-label={`Thông báo${unreadCount ? `, ${unreadCount} chưa đọc` : ''}`} className="relative p-2 text-white hover:text-neon transition-colors">
+                            <Bell size={22} />
+                            {unreadCount > 0 && <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-neon text-obsidian text-[10px] font-bold flex items-center justify-center">{unreadCount > 99 ? '99+' : unreadCount}</span>}
+                        </Link>}
+
                         {user ? (
                             <div className="relative">
                                 <button 
@@ -115,7 +123,7 @@ export const Navbar = () => {
                                 >
                                     <div className="size-8 md:size-10 rounded-full border border-neon bg-white/10 overflow-hidden flex items-center justify-center">
                                         {user.avatarUrl ? (
-                                            <img src={`http://localhost:8081/api/v1/users/avatars/${user.avatarUrl}`} alt="avatar" className="w-full h-full object-cover" />
+                                            <img src={userService.getAvatarUrl(user.avatarUrl)} alt="avatar" className="w-full h-full object-cover" />
                                         ) : (
                                             <User className="w-5 h-5 text-gray-300" />
                                         )}
@@ -212,6 +220,9 @@ export const Navbar = () => {
                     </div>
 
                     <div className="mt-auto space-y-4 pt-10">
+                        {user && <Link to="/notifications" onClick={() => setIsMenuOpen(false)} className="bg-white/5 border border-white/10 text-white w-full py-4 rounded-2xl flex items-center justify-center gap-2 font-bold text-lg">
+                            <Bell size={20} /> Thông báo {unreadCount > 0 && <span className="text-neon">({unreadCount})</span>}
+                        </Link>}
                         {user ? (
                             <>
                                 <Link 

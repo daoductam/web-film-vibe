@@ -11,7 +11,10 @@ export interface WatchHistory {
 
 export interface WatchHistoryRequest {
     movieSlug: string;
-    episodeSlug: string;
+    title: string;
+    thumbUrl?: string;
+    lastEpisodeSlug?: string;
+    lastEpisodeName?: string;
     progressMs: number;
     durationMs: number;
 }

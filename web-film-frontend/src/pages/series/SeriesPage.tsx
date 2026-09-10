@@ -150,7 +150,7 @@ export const SeriesPage = () => {
                         </div>
                     ) : (
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-6">
-                            {moviesData?.content?.map((movie: any) => (
+                            {moviesData?.content?.map((movie) => (
                                 <Link key={movie.id} to={`/movie/${movie.slug}`} className="group relative cursor-pointer interactive-card rounded-2xl glass-card border border-white/5 bg-surface overflow-hidden block">
                                     <div className="aspect-[2/3] w-full relative">
                                         <img 
@@ -192,7 +192,7 @@ export const SeriesPage = () => {
                                     <div className="card-content absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-obsidian via-obsidian to-transparent z-20 opacity-0 group-hover:opacity-100 group-hover:translate-y-0 translate-y-4 transition-all duration-300">
                                         <h3 className="font-serif text-base text-white font-bold mb-1 line-clamp-1">{movie.title}</h3>
                                         <div className="flex items-center gap-2 mb-2">
-                                            <span className="text-neon text-xs font-bold">{movie.rating || 'N/A'}/10</span>
+                                            <span className="text-neon text-xs font-bold">{movie.averageRating || 'N/A'}/5</span>
                                             <span className="text-[10px] text-gray-400">{movie.year}</span>
                                         </div>
                                         <p className="text-[10px] text-gray-300 line-clamp-2 mb-3">

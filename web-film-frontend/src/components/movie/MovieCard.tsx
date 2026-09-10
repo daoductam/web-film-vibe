@@ -3,14 +3,16 @@ import type { Movie } from '../../types';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { personalizationService } from '../../services/personalization.service';
-import { useToast } from '../common/Toast';
+import { useToast } from '../../hooks/useToast';
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface MovieCardProps {
     movie: Movie;
 }
 
 export const MovieCard = ({ movie }: MovieCardProps) => {
+    const queryClient = useQueryClient();
     const { token } = useAuthStore();
     const navigate = useNavigate();
     const { showToast } = useToast();
@@ -36,6 +38,7 @@ export const MovieCard = ({ movie }: MovieCardProps) => {
                 year: movie.year,
                 createdAt: new Date().toISOString()
             });
+            void queryClient.invalidateQueries({ queryKey: ['favorites'] });
             showToast(`Đã thêm "${movie.title}" vào yêu thích!`, 'success');
         } catch (error) {
             console.error('Failed to add favorite:', error);

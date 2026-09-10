@@ -1,7 +1,8 @@
+import { isAxiosError } from 'axios';
 import { useState } from 'react';
 import api from '../../services/api';
 import { Database, RefreshCw } from 'lucide-react';
-import { useToast } from '../../components/common/Toast';
+import { useToast } from '../../hooks/useToast';
 
 export const CrawlPage = () => {
     const [isCrawling, setIsCrawling] = useState(false);
@@ -20,8 +21,8 @@ export const CrawlPage = () => {
             const count = res.data.data?.length || 0;
             setMessage(`Crawl thành công! Đã cập nhật ${count} phim.`);
             showToast(`Crawl thành công! Đã cập nhật ${count} phim mới.`, 'success');
-        } catch (error: any) {
-            const errorMsg = error.response?.data?.message || error.message;
+        } catch (error) {
+            const errorMsg = isAxiosError(error) ? error.response?.data?.message || error.message : 'Không thể thực hiện yêu cầu';
             setMessage(`Lỗi crawl: ${errorMsg}`);
             showToast(`Lỗi crawl: ${errorMsg}`, 'error');
         } finally {
