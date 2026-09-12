@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -35,11 +36,22 @@ public class AIController {
                     .data(response)
                     .build());
         } catch (Exception e) {
-            // Because our global exception handler usually handles throwing errors, 
-            // throwing a RuntimeException here will be caught globally. 
-            // We just ensure we throw it up to be caught by GlobalExceptionHandler.
             throw new RuntimeException(e.getMessage());
         }
+    }
+
+    @GetMapping("/search")
+    @Operation(summary = "AI Semantic Natural Language Search", description = "Extract intent (category, type, year, keyword) via Groq LLM and search movies")
+    public ResponseEntity<ApiResponse<com.tamdao.web_film_backend.dto.response.AISearchResultResponse>> searchWithAI(
+            @org.springframework.web.bind.annotation.RequestParam String q,
+            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "0") int page,
+            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "24") int size) {
+        com.tamdao.web_film_backend.dto.response.AISearchResultResponse result = aiService.searchWithAI(q, page, size);
+        return ResponseEntity.ok(ApiResponse.<com.tamdao.web_film_backend.dto.response.AISearchResultResponse>builder()
+                .success(true)
+                .message("AI semantic search completed successfully")
+                .data(result)
+                .build());
     }
 
     @PostMapping("/sync-graph")

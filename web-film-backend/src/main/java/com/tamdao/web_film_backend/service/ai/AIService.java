@@ -27,16 +27,21 @@ public class AIService {
 
     // A static system prompt that guides Groq to behave like an intent parser
     private static final String INTENT_PROMPT = """
-            You are an AI search query analyzer for CineStream.
-            Analyze the user's message and strictly return a JSON object with this exact format:
+            You are an expert AI search query analyzer for CineStream movie platform.
+            Analyze the user's natural language search request and strictly return a JSON object with this exact format:
             {
-              "isMovieQuery": true/false (true if they are asking for movie recommendations, searching for a plot, or looking for a movie),
-              "categories": ["slug1", "slug2"] (extract genres like 'hanh-dong', 'kinh-di', 'tinh-cam', 'hai-huoc', 'hoat-hinh', 'vien-tuong' empty list if not specified),
-              "country": "slug" (e.g., 'my', 'han-quoc', 'nhat-ban', 'trung-quoc', 'thai-lan', 'viet-nam', null if none),
-              "year": 1234 (integer four-digit year, null if none),
-              "keyword": "search phrase" (a short search keyword or phrase describing the movie's plot/content, e.g. 'mèo máy', 'du hành thời gian', 'robot nổi loạn', null if none)
+              "isMovieQuery": true,
+              "categories": ["slug1", "slug2"],
+              "country": "slug or null",
+              "year": 1234 or null,
+              "type": "SINGLE" or "SERIES" or "HOATHINH" or "TVSHOWS" or null,
+              "keyword": "search phrase extracted or null",
+              "summary": "Short Vietnamese summary of user's search intent (e.g. 'Phim anime hài hước phép thuật')"
             }
-            Do not output any additional text, only valid JSON.
+            Valid category slugs: 'hanh-dong', 'mien-tay', 'vien-tuong', 'chien-tranh', 'hinh-su', 'phieu-luu', 'hai-huoc', 'vo-thuat', 'kinh-di', 'tai-lieu', 'tam-ly', 'tinh-cam', 'hoc-duong', 'co-trang', 'than-thoai', 'chinh-kich', 'hoat-hinh', 'gia-dinh', 'am-nhac', 'the-thao', 'khoa-hoc', 'bi-an'.
+            Valid country slugs: 'my', 'han-quoc', 'nhat-ban', 'trung-quoc', 'thai-lan', 'viet-nam', 'anh', 'phap', 'hong-kong', 'dai-loan', 'an-do'.
+            Valid types: 'SINGLE' (phim lẻ/chiếu rạp), 'SERIES' (phim bộ/nhiều tập), 'HOATHINH' (anime/hoạt hình), 'TVSHOWS' (gameshow/chương trình).
+            Do not output any markdown code blocks, backticks, or additional text, ONLY raw valid JSON.
             """;
 
     private static final String PERSONA_PROMPT = """
@@ -144,6 +149,76 @@ public class AIService {
         } catch (Exception e) {
             log.error("Error in AI Service execution", e);
             throw new RuntimeException("Hệ thống AI đang bận. Bạn vui lòng thử lại sau.", e);
+        }
+    }
+
+    /**
+     * Tìm kiếm phim thông minh theo ngữ nghĩa ngôn ngữ tự nhiên (AI Semantic Search).
+     * Phân tích câu hỏi tự nhiên thành các tham số lọc đa chiều (category, type, country, year, keyword).
+     */
+    public com.tamdao.web_film_backend.dto.response.AISearchResultResponse searchWithAI(String naturalLanguageQuery, int page, int size) {
+        log.info("Processing AI Semantic Search query: {}", naturalLanguageQuery);
+        try {
+            GroqApiClient.GroqMessage systemMsg = new GroqApiClient.GroqMessage("system", INTENT_PROMPT);
+            GroqApiClient.GroqMessage userMsg = new GroqApiClient.GroqMessage("user", naturalLanguageQuery);
+
+            GroqApiClient.GroqResponse response = groqApiClient.callChatCompletion(List.of(systemMsg, userMsg));
+            String rawJson = response.getFirstMessageContent();
+            log.info("AI Semantic Search intent JSON: {}", rawJson);
+
+            ParsedAIIntent intent;
+            if (StringUtils.hasText(rawJson)) {
+                intent = objectMapper.readValue(rawJson, ParsedAIIntent.class);
+            } else {
+                intent = ParsedAIIntent.builder()
+                        .isMovieQuery(true)
+                        .keyword(naturalLanguageQuery)
+                        .build();
+            }
+
+            // Gọi lọc đa tiêu chí trên database
+            Page<MovieResponse> movies = movieService.searchMoviesByDescriptionKeyword(
+                    intent.getKeyword(),
+                    intent.getType(),
+                    intent.getCategories(),
+                    intent.getCountry(),
+                    intent.getYear(),
+                    null,
+                    page,
+                    size
+            );
+
+            // Nếu không tìm thấy bằng keyword mô tả, fallback sang tìm kiếm thông thường với keyword trích xuất
+            if (movies.isEmpty() && StringUtils.hasText(intent.getKeyword())) {
+                movies = movieService.searchMovies(intent.getKeyword(), page, size);
+            }
+
+            String explanation = intent.getSummary();
+            if (!StringUtils.hasText(explanation)) {
+                explanation = "Kết quả tìm kiếm AI cho: " + naturalLanguageQuery;
+            }
+
+            return com.tamdao.web_film_backend.dto.response.AISearchResultResponse.builder()
+                    .parsedIntent(intent)
+                    .movies(movies)
+                    .explanation(explanation)
+                    .build();
+
+        } catch (Exception e) {
+            log.error("AI Semantic Search failed, fallback to standard search", e);
+            // Fallback: Tìm kiếm thông thường nếu Groq AI gặp sự cố
+            Page<MovieResponse> fallbackMovies = movieService.searchMovies(naturalLanguageQuery, page, size);
+            ParsedAIIntent fallbackIntent = ParsedAIIntent.builder()
+                    .isMovieQuery(true)
+                    .keyword(naturalLanguageQuery)
+                    .summary("Tìm kiếm tiêu chuẩn (Chế độ dự phòng)")
+                    .build();
+
+            return com.tamdao.web_film_backend.dto.response.AISearchResultResponse.builder()
+                    .parsedIntent(fallbackIntent)
+                    .movies(fallbackMovies)
+                    .explanation("Không thể phân tích bằng AI, hiển thị kết quả từ khóa trực tiếp.")
+                    .build();
         }
     }
 }

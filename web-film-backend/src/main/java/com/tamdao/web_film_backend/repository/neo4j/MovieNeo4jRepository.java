@@ -28,4 +28,10 @@ public interface MovieNeo4jRepository extends Neo4jRepository<MovieNode, Long> {
            "ORDER BY candidate.views DESC " +
            "LIMIT 10")
     List<MovieNode> getSimilarMovies(@Param("slug") String slug);
+
+    @Query("MATCH (u:User {username: $username})-[r:FAVORITED|WATCHED]->(m:Movie)-[:BELONGS_TO]->(c:Category) " +
+           "RETURN c.slug " +
+           "ORDER BY SUM(CASE type(r) WHEN 'FAVORITED' THEN 3.0 ELSE 1.0 END) DESC " +
+           "LIMIT 5")
+    List<String> getTopCategorySlugsForUser(@Param("username") String username);
 }

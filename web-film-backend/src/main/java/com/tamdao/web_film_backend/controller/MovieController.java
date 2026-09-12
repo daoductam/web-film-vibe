@@ -44,12 +44,14 @@ public class MovieController {
     }
 
     @GetMapping("/search")
-    @Operation(summary = "Search movies", description = "Search movies by keyword")
+    @Operation(summary = "Search movies", description = "Search movies by keyword with personalized ranking if logged in")
     public ResponseEntity<ApiResponse<Page<MovieResponse>>> searchMovies(
             @RequestParam String q,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "24") int size) {
-        Page<MovieResponse> movies = movieService.searchMovies(q, page, size);
+            @RequestParam(defaultValue = "24") int size,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails) {
+        String username = userDetails != null ? userDetails.getUsername() : null;
+        Page<MovieResponse> movies = movieService.searchMovies(q, username, page, size);
         return ResponseEntity.ok(ApiResponse.success(movies, createPageInfo(movies)));
     }
 

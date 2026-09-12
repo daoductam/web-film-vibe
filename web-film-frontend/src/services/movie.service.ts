@@ -35,6 +35,26 @@ export const movieService = {
         return response.data.data;
     },
 
+    searchWithAI: async (naturalLanguageQuery: string, page = 1, size = 24) => {
+        const apiPage = Math.max(0, page - 1);
+        const response = await api.get<ApiResponse<{
+            parsedIntent: {
+                isMovieQuery: boolean;
+                categories?: string[];
+                country?: string;
+                year?: number;
+                keyword?: string;
+                type?: string;
+                summary?: string;
+            };
+            movies: PageResponse<Movie>;
+            explanation: string;
+        }>>('/ai/search', {
+            params: { q: naturalLanguageQuery, page: apiPage, size }
+        });
+        return response.data.data;
+    },
+
     filterMovies: async (params: {
         type?: string;
         category?: string;

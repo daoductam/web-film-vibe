@@ -1,10 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Menu, X, Play, User, LogOut, Bell } from 'lucide-react';
+import { Search, Menu, X, Play, User, LogOut, Bell, Clock, Trash2, ArrowRight, Star } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuthStore } from '../../store/authStore';
 import { useUnreadNotifications } from '../../hooks/useUnreadNotifications';
 import { userService } from '../../services/user.service';
+import { movieService } from '../../services/movie.service';
+import { useDebounce } from '../../hooks/useDebounce';
+import type { Movie } from '../../types';
+
+const RECENT_SEARCHES_KEY = 'cinestream_recent_searches';
+const MAX_RECENT_SEARCHES = 6;
 
 export const Navbar = () => {
     const [scrolled, setScrolled] = useState(false);
@@ -12,9 +18,103 @@ export const Navbar = () => {
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [suggestions, setSuggestions] = useState<Movie[]>([]);
+    const [isSearchingSuggestions, setIsSearchingSuggestions] = useState(false);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [recentSearches, setRecentSearches] = useState<string[]>([]);
+
+    const desktopSearchRef = useRef<HTMLDivElement>(null);
+    const mobileSearchRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
     const { user, logout } = useAuthStore();
     const { data: unreadCount = 0 } = useUnreadNotifications();
+
+    const debouncedSearch = useDebounce(searchQuery.trim(), 280);
+
+    // Load recent searches from localStorage
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem(RECENT_SEARCHES_KEY);
+            if (saved) {
+                setRecentSearches(JSON.parse(saved));
+            }
+        } catch (e) {
+            console.error('Failed to parse recent searches', e);
+        }
+    }, []);
+
+    // Save recent search
+    const saveRecentSearch = (term: string) => {
+        const cleaned = term.trim();
+        if (!cleaned) return;
+        setRecentSearches(prev => {
+            const filtered = prev.filter(item => item.toLowerCase() !== cleaned.toLowerCase());
+            const updated = [cleaned, ...filtered].slice(0, MAX_RECENT_SEARCHES);
+            try {
+                localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
+            } catch (e) {
+                console.error('Failed to save recent search', e);
+            }
+            return updated;
+        });
+    };
+
+    // Remove single recent search
+    const removeRecentSearch = (term: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setRecentSearches(prev => {
+            const updated = prev.filter(item => item !== term);
+            localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
+            return updated;
+        });
+    };
+
+    // Clear all recent searches
+    const clearAllRecentSearches = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setRecentSearches([]);
+        localStorage.removeItem(RECENT_SEARCHES_KEY);
+    };
+
+    // Click outside listener to close dropdown
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (
+                desktopSearchRef.current && !desktopSearchRef.current.contains(e.target as Node) &&
+                mobileSearchRef.current && !mobileSearchRef.current.contains(e.target as Node)
+            ) {
+                setIsDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // Fetch instant search suggestions
+    useEffect(() => {
+        let isCancelled = false;
+        if (debouncedSearch.length >= 2) {
+            setIsSearchingSuggestions(true);
+            movieService.searchMovies(debouncedSearch, 1, 5)
+                .then(res => {
+                    if (!isCancelled) {
+                        setSuggestions(res?.content || []);
+                    }
+                })
+                .catch(() => {
+                    if (!isCancelled) setSuggestions([]);
+                })
+                .finally(() => {
+                    if (!isCancelled) setIsSearchingSuggestions(false);
+                });
+        } else {
+            setSuggestions([]);
+            setIsSearchingSuggestions(false);
+        }
+        return () => {
+            isCancelled = true;
+        };
+    }, [debouncedSearch]);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -35,13 +135,24 @@ export const Navbar = () => {
         };
     }, [isMenuOpen]);
 
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (searchQuery.trim()) {
-            navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+    const handleSearch = (e?: React.FormEvent, customTerm?: string) => {
+        if (e) e.preventDefault();
+        const term = (customTerm !== undefined ? customTerm : searchQuery).trim();
+        if (term) {
+            saveRecentSearch(term);
+            navigate(`/search?q=${encodeURIComponent(term)}`);
+            setIsDropdownOpen(false);
             setIsSearchOpen(false);
             setIsMenuOpen(false);
         }
+    };
+
+    const handleSelectMovie = (slug: string, title: string) => {
+        saveRecentSearch(title);
+        setIsDropdownOpen(false);
+        setIsSearchOpen(false);
+        setIsMenuOpen(false);
+        navigate(`/movie/${slug}`);
     };
 
     const navLinks = [
@@ -51,6 +162,135 @@ export const Navbar = () => {
         { name: 'Mới & Phổ biến', path: '/popular' },
         { name: 'Phòng xem chung 🎬', path: '/watch-party' },
     ];
+
+    // Autocomplete dropdown menu component
+    const renderSearchDropdown = () => {
+        if (!isDropdownOpen) return null;
+
+        const hasRecent = recentSearches.length > 0;
+        const hasSuggestions = suggestions.length > 0;
+        const isQueryLongEnough = searchQuery.trim().length >= 2;
+
+        if (!hasRecent && !isQueryLongEnough && !isSearchingSuggestions) {
+            return null;
+        }
+
+        return (
+            <div className="absolute top-full left-0 right-0 mt-2 bg-[#121418]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                {/* Recent Searches (shown when query is short or empty) */}
+                {!isQueryLongEnough && hasRecent && (
+                    <div className="p-3">
+                        <div className="flex items-center justify-between px-3 py-1.5 text-xs text-text-secondary font-medium">
+                            <span className="flex items-center gap-1.5 uppercase tracking-wider text-[11px] text-gray-400">
+                                <Clock size={13} className="text-neon" /> Lịch sử tìm kiếm
+                            </span>
+                            <button
+                                onClick={clearAllRecentSearches}
+                                className="text-gray-500 hover:text-red-400 text-[11px] flex items-center gap-1 transition-colors"
+                            >
+                                <Trash2 size={11} /> Xóa tất cả
+                            </button>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5 mt-2 px-2">
+                            {recentSearches.map(term => (
+                                <div
+                                    key={term}
+                                    onClick={() => {
+                                        setSearchQuery(term);
+                                        handleSearch(undefined, term);
+                                    }}
+                                    className="group flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 hover:bg-neon/10 border border-white/5 hover:border-neon/30 text-xs text-gray-300 hover:text-neon cursor-pointer transition-all"
+                                >
+                                    <span>{term}</span>
+                                    <button
+                                        onClick={(e) => removeRecentSearch(term, e)}
+                                        className="text-gray-500 group-hover:text-red-400 hover:scale-110 p-0.5 rounded-full transition-all"
+                                    >
+                                        <X size={12} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Instant Search Results */}
+                {isQueryLongEnough && (
+                    <div className="p-2">
+                        <div className="px-3 py-2 text-[11px] uppercase tracking-wider text-gray-400 font-semibold flex items-center justify-between border-b border-white/5">
+                            <span>Gợi ý phim nhanh</span>
+                            {isSearchingSuggestions && (
+                                <span className="text-neon flex items-center gap-1 text-[11px] lowercase">
+                                    <span className="size-1.5 rounded-full bg-neon animate-ping"></span>
+                                    đang tìm...
+                                </span>
+                            )}
+                        </div>
+
+                        {isSearchingSuggestions && !hasSuggestions ? (
+                            <div className="py-6 text-center text-xs text-gray-400 flex items-center justify-center gap-2">
+                                <span className="size-3 rounded-full border-2 border-neon border-t-transparent animate-spin"></span>
+                                Đang tìm kiếm...
+                            </div>
+                        ) : hasSuggestions ? (
+                            <div className="divide-y divide-white/5">
+                                {suggestions.map(movie => (
+                                    <div
+                                        key={movie.id}
+                                        onClick={() => handleSelectMovie(movie.slug, movie.title)}
+                                        className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/10 cursor-pointer transition-all group"
+                                    >
+                                        <img
+                                            src={movie.thumbUrl || movie.posterUrl}
+                                            alt={movie.title}
+                                            className="w-10 h-14 rounded-md object-cover flex-shrink-0 border border-white/10 group-hover:border-neon/50 shadow"
+                                        />
+                                        <div className="flex-1 min-w-0">
+                                            <h4 className="text-sm font-semibold text-white group-hover:text-neon transition-colors truncate">
+                                                {movie.title}
+                                            </h4>
+                                            <p className="text-xs text-gray-400 truncate">
+                                                {movie.originTitle || movie.director || 'CineStream'}
+                                            </p>
+                                            <div className="flex items-center gap-2 mt-1 text-[11px] text-gray-500">
+                                                {movie.year && <span>{movie.year}</span>}
+                                                {movie.quality && (
+                                                    <span className="px-1.5 py-0.5 rounded bg-neon/10 text-neon font-medium border border-neon/20 text-[10px]">
+                                                        {movie.quality}
+                                                    </span>
+                                                )}
+                                                {movie.averageRating && movie.averageRating > 0 && (
+                                                    <span className="flex items-center gap-0.5 text-amber-400">
+                                                        <Star size={10} fill="currentColor" />
+                                                        {movie.averageRating.toFixed(1)}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <ArrowRight size={16} className="text-gray-500 group-hover:text-neon group-hover:translate-x-0.5 transition-all opacity-0 group-hover:opacity-100 mr-1" />
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="py-6 text-center text-xs text-gray-500">
+                                Không tìm thấy phim phù hợp với "{searchQuery}"
+                            </div>
+                        )}
+
+                        {/* View all button */}
+                        <button
+                            type="button"
+                            onClick={() => handleSearch()}
+                            className="w-full mt-2 py-2.5 px-4 rounded-xl bg-neon/10 hover:bg-neon text-neon hover:text-obsidian font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
+                        >
+                            <span>Xem tất cả kết quả cho "{searchQuery}"</span>
+                            <ArrowRight size={14} />
+                        </button>
+                    </div>
+                )}
+            </div>
+        );
+    };
 
     return (
         <>
@@ -91,16 +331,23 @@ export const Navbar = () => {
                     {/* Actions */}
                     <div className="flex items-center gap-2 md:gap-4">
                         {/* Search Bar (Desktop) */}
-                        <form onSubmit={handleSearch} className="hidden lg:flex relative group">
-                            <input 
-                                type="text" 
-                                className="w-48 xl:w-64 bg-white/5 border border-white/10 rounded-full px-4 py-2 pl-10 text-sm focus:outline-none focus:border-neon focus:ring-1 focus:ring-neon transition-all text-white placeholder-text-secondary" 
-                                placeholder="Tìm kiếm phim..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
-                            <Search className="absolute left-3 top-2.5 w-4 h-4 text-text-secondary group-focus-within:text-neon" />
-                        </form>
+                        <div ref={desktopSearchRef} className="hidden lg:block relative group">
+                            <form onSubmit={handleSearch} className="relative">
+                                <input 
+                                    type="text" 
+                                    className="w-56 xl:w-72 bg-white/5 border border-white/10 rounded-full px-4 py-2 pl-10 text-sm focus:outline-none focus:border-neon focus:ring-1 focus:ring-neon transition-all text-white placeholder-text-secondary" 
+                                    placeholder="Tìm kiếm phim..."
+                                    value={searchQuery}
+                                    onFocus={() => setIsDropdownOpen(true)}
+                                    onChange={(e) => {
+                                        setSearchQuery(e.target.value);
+                                        setIsDropdownOpen(true);
+                                    }}
+                                />
+                                <Search className="absolute left-3 top-2.5 w-4 h-4 text-text-secondary group-focus-within:text-neon" />
+                            </form>
+                            {renderSearchDropdown()}
+                        </div>
 
                         {/* Mobile Search Toggle */}
                         <button 
@@ -163,7 +410,7 @@ export const Navbar = () => {
 
                 {/* Mobile Search Overlay */}
                 {isSearchOpen && (
-                    <div className="absolute top-full left-0 right-0 bg-obsidian/95 backdrop-blur-xl border-b border-white/10 p-4 md:hidden animate-in slide-in-from-top duration-300">
+                    <div ref={mobileSearchRef} className="absolute top-full left-0 right-0 bg-obsidian/95 backdrop-blur-xl border-b border-white/10 p-4 md:hidden animate-in slide-in-from-top duration-300">
                         <form onSubmit={handleSearch} className="relative">
                             <input 
                                 autoFocus
@@ -171,10 +418,15 @@ export const Navbar = () => {
                                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pl-12 text-sm focus:outline-none focus:border-neon text-white" 
                                 placeholder="Tên phim, diễn viên..." 
                                 value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onFocus={() => setIsDropdownOpen(true)}
+                                onChange={(e) => {
+                                    setSearchQuery(e.target.value);
+                                    setIsDropdownOpen(true);
+                                }}
                             />
                             <Search className="absolute left-4 top-3.5 w-5 h-5 text-neon" />
                         </form>
+                        {renderSearchDropdown()}
                     </div>
                 )}
             </header>

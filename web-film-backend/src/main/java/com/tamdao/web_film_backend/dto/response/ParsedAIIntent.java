@@ -20,4 +20,6 @@ public class ParsedAIIntent {
     private String country;
     private Integer year;
     private String keyword;
+    private String type; // e.g. "SINGLE", "SERIES", "HOATHINH", "TVSHOWS"
+    private String summary; // Tóm tắt ý định tìm kiếm ngắn gọn bằng tiếng Việt
 }

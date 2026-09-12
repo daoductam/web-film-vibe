@@ -37,6 +37,7 @@ public class MovieService {
     private final EpisodeMapper episodeMapper;
     private final CategoryMapper categoryMapper;
     private final CountryMapper countryMapper;
+    private final java.util.Optional<com.tamdao.web_film_backend.repository.neo4j.MovieNeo4jRepository> movieNeo4jRepository;
 
     /**
      * Get paginated list of latest movies.
@@ -113,13 +114,51 @@ public class MovieService {
     }
 
     /**
-     * Search movies by keyword.
+     * Search movies by keyword with Vietnamese diacritics normalization.
      */
     @Transactional(readOnly = true)
     public Page<MovieResponse> searchMovies(String keyword, int page, int size) {
+        return searchMovies(keyword, null, page, size);
+    }
+
+    /**
+     * Search movies by keyword with Personalized Re-ranking (Neo4j).
+     * Ưu tiên đưa các phim thuộc thể loại yêu thích của User lên đầu kết quả tìm kiếm.
+     */
+    @Transactional(readOnly = true)
+    public Page<MovieResponse> searchMovies(String keyword, String username, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return movieRepository.searchByKeyword(keyword, pageable)
-                .map(movieMapper::toResponse);
+        String trimmed = keyword != null ? keyword.trim() : "";
+        String unaccented = com.tamdao.web_film_backend.util.VietnameseStringUtils.removeAccents(trimmed);
+        String slug = com.tamdao.web_film_backend.util.VietnameseStringUtils.toSlug(trimmed);
+
+        Page<Movie> searchResult = movieRepository.searchByKeyword(trimmed, unaccented, slug, pageable);
+        List<MovieResponse> list = searchResult.getContent().stream()
+                .map(this::enrichWithRating)
+                .collect(Collectors.toList());
+
+        // Nếu user đã đăng nhập, truy vấn Neo4j để lấy top thể loại yêu thích và re-rank
+        if (username != null && !username.isBlank() && movieNeo4jRepository.isPresent()) {
+            try {
+                List<String> preferredCategorySlugs = movieNeo4jRepository.get().getTopCategorySlugsForUser(username);
+                if (preferredCategorySlugs != null && !preferredCategorySlugs.isEmpty()) {
+                    Set<String> preferredSet = new HashSet<>(preferredCategorySlugs);
+                    
+                    // Sắp xếp lại danh sách: phim nào có category thuộc preferredSet thì xếp ưu tiên lên trước
+                    list.sort((m1, m2) -> {
+                        boolean m1Match = m1.getCategories() != null && m1.getCategories().stream().anyMatch(c -> preferredSet.contains(c.getSlug()));
+                        boolean m2Match = m2.getCategories() != null && m2.getCategories().stream().anyMatch(c -> preferredSet.contains(c.getSlug()));
+                        if (m1Match && !m2Match) return -1;
+                        if (!m1Match && m2Match) return 1;
+                        return 0; // Giữ nguyên thứ tự trọng số ban đầu
+                    });
+                }
+            } catch (Exception e) {
+                log.warn("Neo4j personalized re-ranking skipped for user {}: {}", username, e.getMessage());
+            }
+        }
+
+        return new org.springframework.data.domain.PageImpl<>(list, pageable, searchResult.getTotalElements());
     }
 
     /**

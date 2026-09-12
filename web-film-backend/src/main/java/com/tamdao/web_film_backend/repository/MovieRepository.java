@@ -62,8 +62,33 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
     @Query("SELECT m FROM Movie m WHERE m.year = :year")
     Page<Movie> findByYear(@Param("year") Integer year, Pageable pageable);
 
-    @Query("SELECT m FROM Movie m WHERE LOWER(m.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(m.originTitle) LIKE LOWER(CONCAT('%', :keyword, '%'))")
-    Page<Movie> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
+    @Query("SELECT DISTINCT m FROM Movie m " +
+            "LEFT JOIN m.categories c " +
+            "WHERE " +
+            "LOWER(m.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "LOWER(m.originTitle) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "LOWER(m.actors) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "LOWER(m.director) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "LOWER(m.slug) LIKE LOWER(CONCAT('%', :slugKeyword, '%')) OR " +
+            "LOWER(m.slug) LIKE LOWER(CONCAT('%', :unaccentedKeyword, '%')) OR " +
+            "LOWER(m.description) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "LOWER(c.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "LOWER(c.slug) LIKE LOWER(CONCAT('%', :slugKeyword, '%')) " +
+            "ORDER BY CASE " +
+            "   WHEN LOWER(m.title) = LOWER(:keyword) THEN 1 " +
+            "   WHEN LOWER(m.title) LIKE LOWER(CONCAT(:keyword, '%')) THEN 2 " +
+            "   WHEN LOWER(m.title) LIKE LOWER(CONCAT('%', :keyword, '%')) THEN 3 " +
+            "   WHEN LOWER(m.slug) LIKE LOWER(CONCAT(:slugKeyword, '%')) THEN 4 " +
+            "   WHEN LOWER(m.slug) LIKE LOWER(CONCAT('%', :slugKeyword, '%')) THEN 5 " +
+            "   WHEN LOWER(m.originTitle) LIKE LOWER(CONCAT('%', :keyword, '%')) THEN 6 " +
+            "   WHEN LOWER(m.actors) LIKE LOWER(CONCAT('%', :keyword, '%')) THEN 7 " +
+            "   WHEN LOWER(c.name) LIKE LOWER(CONCAT('%', :keyword, '%')) THEN 8 " +
+            "   ELSE 9 END, m.viewCount DESC")
+    Page<Movie> searchByKeyword(
+            @Param("keyword") String keyword,
+            @Param("unaccentedKeyword") String unaccentedKeyword,
+            @Param("slugKeyword") String slugKeyword,
+            Pageable pageable);
 
     @Query("SELECT DISTINCT m FROM Movie m " +
             "LEFT JOIN m.categories c " +
